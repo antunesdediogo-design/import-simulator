@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Only André and Agustín can read or write the shared simulator data.
+// Paste this into Firebase console > Firestore Database > Rules, then click Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isTeam() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'antunes.de.diogo@gmail.com',
+          'agustin.oelckers@gmail.com'
+        ];
+    }
+
+    match /workspaces/andre-agustin/{document=**} {
+      allow read, write: if isTeam();
+    }
+
+    // Everything else stays closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

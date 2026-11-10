@@ -14,7 +14,10 @@ A one-page tool to check whether a product imported from China to Chile is worth
 
 ## Where your data is saved
 
-Everything you type is saved only in your own browser (local storage). Nothing is sent to a server. Another person opening the link starts from the example data, and clearing your browser data erases your entries.
+- **Signed in as André or Agustín (Google sign-in):** the André and Agustín profiles are saved in a shared Firebase database. Each of you can open either profile with the selector at the top, and changes appear for both. Only the two emails in `firestore.rules` can read or write this data.
+- **Anyone else, or before signing in:** everything is saved only in that person's own browser (local storage). Nothing is sent to a server, and clearing browser data erases it.
+
+The Firebase web config in `index.html` is not a secret. Access is controlled by Google sign-in and the rules in `firestore.rules`, which must be published in the Firebase console (Firestore Database > Rules).
 
 ## Sources and limits
 
