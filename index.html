@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Landed cost, IVA, cash flow and marketplace P&L simulator for importing products from China to Chile.">
+<title>Import Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: overview of all products, product tabs, then notes and inputs on the left with results on the right, and the marketplace P&L full width below. */
+:root {
+  --bg: #f4f6f3;
+  --surface: #ffffff;
+  --fg: #1a231e;
+  --muted: #5b6862;
+  --line: #dce2dd;
+  --accent: #0e6b56;
+  --accent-fg: #ffffff;
+  --accent-soft: #e3f1ec;
+  --warn: #9a5200;
+  --warn-bg: #fbf1e0;
+  --bad: #b3261e;
+  --s-goods: #0e6b56;
+  --s-freight: #3b78b8;
+  --s-duty: #b0832a;
+  --s-iva: #8760ad;
+  --s-agent: #8a948e;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1512;
+    --surface: #172019;
+    --fg: #e5ece8;
+    --muted: #9aa9a1;
+    --line: #27332b;
+    --accent: #4cc2a1;
+    --accent-fg: #07120d;
+    --accent-soft: #15302a;
+    --warn: #e8b266;
+    --warn-bg: #2a2114;
+    --bad: #f0877f;
+    --s-goods: #4cc2a1;
+    --s-freight: #6fa5dd;
+    --s-duty: #d4a94f;
+    --s-iva: #b690d8;
+    --s-agent: #8a948e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1512;
+  --surface: #172019;
+  --fg: #e5ece8;
+  --muted: #9aa9a1;
+  --line: #27332b;
+  --accent: #4cc2a1;
+  --accent-fg: #07120d;
+  --accent-soft: #15302a;
+  --warn: #e8b266;
+  --warn-bg: #2a2114;
+  --bad: #f0877f;
+  --s-goods: #4cc2a1;
+  --s-freight: #6fa5dd;
+  --s-duty: #d4a94f;
+  --s-iva: #b690d8;
+  --s-agent: #8a948e;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 4px; text-wrap: balance; letter-spacing: -0.01em; }
+h3 { font-size: 0.9rem; font-weight: 600; margin: 18px 0 8px; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.top p { margin: 0; color: var(--muted); max-width: 62ch; }
+.topright { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.fxfield { width: 140px; }
+.status { font-size: 0.78rem; color: var(--muted); padding-bottom: 9px; min-width: 9ch; }
+.status[data-s="unsaved"] { color: var(--bad); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
+.panel h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 0 0 12px; }
+.field { display: grid; gap: 4px; min-width: 0; align-content: start; }
+.field label { font-size: 0.82rem; font-weight: 500; }
+.hint { font-size: 0.75rem; color: var(--muted); }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+input[type="number"], input[type="text"], select, textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+input[type="number"] { font-family: var(--font-num); }
+textarea { resize: vertical; min-height: 84px; line-height: 1.45; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: inherit; }
+.btn { background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 0.85rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.danger[data-confirm="1"] { background: var(--bad); color: #fff; border-color: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-num); font-size: 0.75rem; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+.chip:hover { color: var(--fg); border-color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 0.88rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.tab.add { border-style: dashed; color: var(--muted); }
+.phead { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 14px 18px; }
+.phead .field { flex: 1 1 260px; }
+.phead .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.left, .results { display: grid; gap: 18px; min-width: 0; }
+.group { display: grid; gap: 12px; }
+.group + .group { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+
+.linkadd { display: flex; gap: 8px; }
+.linklist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.linklist li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.linklist a { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; font-size: 0.85rem; }
+.x { background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+.x:hover { color: var(--bad); }
+.drop { border: 1px dashed var(--line); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: var(--muted); display: grid; gap: 8px; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+.ph { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); }
+.ph button.open { all: unset; cursor: zoom-in; display: block; width: 100%; height: 100%; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph .x { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.55); color: #fff; }
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; cursor: zoom-out; }
+#lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+#lightbox[hidden] { display: none; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.stat .k { font-size: 0.75rem; color: var(--muted); }
+.stat .v { font-family: var(--font-num); font-size: 1.3rem; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 2px; overflow-wrap: anywhere; }
+.stat.main { border-color: var(--accent); }
+.stat .sub { font-size: 0.75rem; color: var(--muted); font-family: var(--font-num); }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.n, th.n { text-align: right; font-family: var(--font-num); white-space: nowrap; }
+tr.total td { font-weight: 600; border-top: 2px solid var(--fg); border-bottom: 0; }
+tr.sub td { background: var(--bg); font-weight: 500; }
+tr.final td { background: var(--accent-soft); font-weight: 600; border-top: 2px solid var(--accent); }
+tr.credit td { color: var(--s-goods); }
+tr.neg td.n { color: var(--muted); }
+td .note { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 400; font-family: var(--font-body); }
+#overview tbody tr { cursor: pointer; }
+#overview tbody tr:hover td { background: var(--bg); }
+#overview tbody tr.active td { background: var(--accent-soft); }
+#overview .pname { all: unset; cursor: pointer; font-weight: 500; }
+.pos { color: var(--s-goods); }
+.neg { color: var(--bad); }
+
+.bar { display: flex; height: 22px; border-radius: 5px; overflow: hidden; background: var(--line); }
+.bar span { display: block; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 0.8rem; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend b { font-family: var(--font-num); font-weight: 500; }
+
+.callout { background: var(--warn-bg); color: var(--fg); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; }
+.callout strong { color: var(--warn); }
+.plinputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.fullbox { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: grid; gap: 12px; }
+.fullbox p { margin: 0; }
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 500; font-size: 0.9rem; width: fit-content; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch .track { width: 38px; height: 22px; border-radius: 999px; background: var(--line); position: relative; transition: background 0.15s; flex: none; }
+.switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 0.15s; }
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(16px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fullopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.fullopts[hidden] { display: none; }
+.dims { display: flex; align-items: center; gap: 6px; }
+.dims input { min-width: 0; flex: 1; }
+.dims span { color: var(--muted); font-size: 0.85rem; }
+#overview input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+#overview tfoot td { font-weight: 600; border-top: 2px solid var(--fg); border-bottom: 0; background: var(--accent-soft); }
+.lclstats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.lclstats div { background: var(--bg); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+.lclstats .k { font-size: 0.72rem; color: var(--muted); }
+.lclstats .v { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 1rem; font-weight: 500; overflow-wrap: anywhere; }
+.fill { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; margin: 10px 0 4px; }
+.fill span { display: block; height: 100%; background: var(--accent); }
+.sumlist { display: grid; gap: 6px; font-size: 0.9rem; margin-top: 14px; }
+.sumlist .line { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sumlist .line span:last-child { font-family: var(--font-num); font-variant-numeric: tabular-nums; text-align: right; }
+.badge { display: inline-block; font-size: 0.68rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-family: var(--font-body); white-space: nowrap; }
+.badge.warn { color: var(--warn); border-color: var(--warn); }
+tr.sel td { background: var(--accent-soft); }
+details { margin-top: 16px; }
+summary { cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+#mkbody input { padding: 6px 8px; font-size: 0.85rem; }
+#mkbody td { vertical-align: middle; }
+.foot { font-size: 0.78rem; color: var(--muted); max-width: 80ch; }
+.foot p { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Import Simulator</h1>
+      <p>Landed cost, cash flow and a marketplace P&amp;L for each product you want to import from China to Chile by air. Add a product, paste its links and photos, enter quantity and FCA price.</p>
+    </div>
+    <div class="topright">
+      <div class="field fxfield">
+        <label for="fx">CLP per USD</label>
+        <input id="fx" type="number" min="0" step="1" value="950">
+      </div>
+      <span class="status" id="status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <section class="panel" aria-label="All products">
+    <h2>All products</h2>
+    <div class="fullbox">
+      <label class="switch" for="f-lcl">
+        <input type="checkbox" id="f-lcl" role="switch">
+        <span class="track" aria-hidden="true"></span>
+        <span class="switchlabel">Ship selected products together by sea (LCL)</span>
+      </label>
+      <div class="fullopts" id="lclOpts">
+        <div class="field">
+          <label for="lcl-rate">Price per m³, door to door (US$)</label>
+          <input id="lcl-rate" type="number" min="0" step="10">
+        </div>
+        <div class="field">
+          <label for="lcl-min">Minimum billed (m³)</label>
+          <input id="lcl-min" type="number" min="0" step="0.1">
+        </div>
+        <div class="field">
+          <label for="lcl-agent">Customs agent and local, whole shipment (US$)</label>
+          <input id="lcl-agent" type="number" min="0" step="10">
+          <span class="hint">0 when the door-to-door price already includes the customs agent, as your US$350 quote does</span>
+        </div>
+      </div>
+      <div id="lclSummary"></div>
+      <p class="hint" id="lclNote"></p>
+    </div>
+    <div class="tablewrap">
+      <table id="overview">
+        <thead><tr><th id="lclCol">In LCL</th><th>Product</th><th class="n">Qty</th><th class="n">Volume</th><th class="n">FCA</th><th class="n">Net cost/unit</th><th class="n">RRP</th><th>Marketplace</th><th class="n">Profit/unit</th><th class="n">Margin</th></tr></thead>
+        <tbody id="overviewBody"></tbody>
+        <tfoot id="overviewFoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="Products"></div>
+
+  <section class="panel phead" aria-label="Product">
+    <div class="field">
+      <label for="f-name">Product name</label>
+      <input id="f-name" type="text" placeholder="e.g. LW-A5Mini pump">
+    </div>
+    <div class="acts">
+      <button class="btn" type="button" id="dup">Duplicate</button>
+      <button class="btn danger" type="button" id="del">Delete</button>
+    </div>
+  </section>
+
+  <div class="layout">
+    <div class="left">
+      <section class="panel" aria-label="Reference">
+        <h2>Reference</h2>
+        <div class="group">
+          <div class="field">
+            <label for="f-notes">Comments</label>
+            <textarea id="f-notes" placeholder="Supplier, what they confirmed, questions to ask, next steps"></textarea>
+          </div>
+          <div class="field">
+            <label for="f-link">Links</label>
+            <div class="linkadd">
+              <input id="f-link" type="text" placeholder="Paste a link and press Enter" autocomplete="off">
+              <button class="btn" type="button" id="addLink">Add</button>
+            </div>
+            <ul class="linklist" id="links"></ul>
+          </div>
+          <div class="field">
+            <span class="field-label" style="font-size:0.82rem;font-weight:500">Photos</span>
+            <div class="drop" id="drop">
+              <span>Paste an image anywhere on this page, drop files here, or choose files.</span>
+              <input id="f-photo" type="file" accept="image/*" multiple aria-label="Choose photos">
+            </div>
+            <div class="photos" id="photos"></div>
+            <span class="hint" id="photoMsg"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Inputs">
+        <h2>Simulator inputs</h2>
+        <div class="group">
+          <div class="row2">
+            <div class="field">
+              <label for="f-qty">Quantity (units)</label>
+              <input id="f-qty" type="number" min="1" step="1">
+            </div>
+            <div class="field">
+              <label for="f-price">FCA unit price (USD)</label>
+              <input id="f-price" type="number" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="field">
+            <span class="hint">Quick fill: price tiers</span>
+            <div class="chips" id="chips"></div>
+          </div>
+        </div>
+        <div class="group">
+          <div class="row2">
+            <div class="field">
+              <label for="f-kgu">Weight per unit (kg)</label>
+              <input id="f-kgu" type="number" min="0" step="0.01">
+              <span class="hint" id="wtotal"></span>
+            </div>
+            <div class="field">
+              <label for="f-rate">Air freight (USD/kg)</label>
+              <input id="f-rate" type="number" min="0" step="0.1">
+              <span class="hint">Quotes seen: 5 to 15</span>
+            </div>
+          </div>
+          <div class="field">
+            <span style="font-size:0.82rem;font-weight:500" id="cartonLbl">Carton size (cm)</span>
+            <div class="dims" role="group" aria-labelledby="cartonLbl">
+              <input id="f-cl" type="number" min="0" step="0.5" aria-label="Carton length in cm" placeholder="L">
+              <span aria-hidden="true">x</span>
+              <input id="f-cw" type="number" min="0" step="0.5" aria-label="Carton width in cm" placeholder="W">
+              <span aria-hidden="true">x</span>
+              <input id="f-ch" type="number" min="0" step="0.5" aria-label="Carton height in cm" placeholder="H">
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="f-upc">Units per carton</label>
+              <input id="f-upc" type="number" min="1" step="1">
+            </div>
+            <div class="field">
+              <label for="f-vdiv">Volumetric divisor</label>
+              <select id="f-vdiv">
+                <option value="6000">6000, air cargo</option>
+                <option value="5000">5000, courier (DHL etc.)</option>
+              </select>
+            </div>
+          </div>
+          <span class="hint" id="volHint"></span>
+          <div class="row2">
+            <div class="field">
+              <label for="f-origin">Origin charges (USD)</label>
+              <input id="f-origin" type="number" min="0" step="1">
+              <span class="hint">Pickup, export clearance</span>
+            </div>
+            <div class="field">
+              <label for="f-insp">Insurance (% of goods)</label>
+              <input id="f-insp" type="number" min="0" step="0.1">
+            </div>
+          </div>
+        </div>
+        <div class="group">
+          <div class="field">
+            <label for="f-duty">Customs duty</label>
+            <select id="f-duty">
+              <option value="0">0% with Form F (Chile-China FTA)</option>
+              <option value="6">6% general rate</option>
+            </select>
+            <span class="hint">IVA is 19% on CIF plus duty</span>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="f-agent">Agent and local costs (USD)</label>
+              <input id="f-agent" type="number" min="0" step="10">
+              <span class="hint">Estimate, get a quote</span>
+            </div>
+            <div class="field">
+              <label for="f-dep">Supplier deposit (%)</label>
+              <input id="f-dep" type="number" min="0" max="100" step="5">
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="results">
+      <div class="stats" aria-live="polite">
+        <div class="stat"><div class="k">Total cash out</div><div class="v" id="s-total">-</div><div class="sub" id="s-total-clp"></div></div>
+        <div class="stat main"><div class="k">Net cost after IVA credit</div><div class="v" id="s-net">-</div><div class="sub" id="s-net-clp"></div></div>
+        <div class="stat"><div class="k">Net cost per unit</div><div class="v" id="s-unit">-</div><div class="sub" id="s-unit-clp"></div></div>
+        <div class="stat"><div class="k">Per unit incl. IVA</div><div class="v" id="s-unit-iva">-</div></div>
+      </div>
+
+      <section class="panel">
+        <h2>Cost build-up (USD)</h2>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Item</th><th class="n">Amount</th></tr></thead>
+            <tbody id="build"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:16px">
+          <div class="bar" id="bar" role="img" aria-label="Share of each cost in the total cash out"></div>
+          <ul class="legend" id="legend"></ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Cash flow timeline (USD)</h2>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>When</th><th class="n">Cash</th><th class="n">Running net</th></tr></thead>
+            <tbody id="flow"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="callout" id="agentnote"></div>
+
+      <div class="foot">
+        <p>Assumptions to confirm: air freight and insurance are estimates; the 0% duty needs the preferential certificate (Form F) from the supplier and a tariff code that qualifies; the agent fee is a placeholder; the deposit split is typical, not agreed.</p>
+        <p>The IVA paid at customs becomes a tax credit (crédito fiscal) for a company with registered activity. It reduces the IVA you owe on sales in the F29 filed the following month and is not paid back in cash. Check the details with your accountant.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="panel" aria-label="Marketplace P and L">
+    <h2>Marketplace P&amp;L (CLP)</h2>
+    <div class="plinputs">
+      <div class="field">
+        <label for="f-rrp">RRP, IVA included (CLP)</label>
+        <input id="f-rrp" type="number" min="0" step="100">
+      </div>
+      <div class="field">
+        <label for="f-mk">Marketplace</label>
+        <select id="f-mk"></select>
+      </div>
+      <div class="field">
+        <label for="f-roas">ROAS (x)</label>
+        <input id="f-roas" type="number" min="0" step="0.1">
+        <span class="hint">Sales per 1 of ad spend. 0 means no ads.</span>
+      </div>
+      <div class="field">
+        <label for="f-returns">Returns and losses (%)</label>
+        <input id="f-returns" type="number" min="0" step="0.5">
+        <span class="hint">Of net revenue</span>
+      </div>
+      <div class="field">
+        <label for="f-target">Target margin (%)</label>
+        <input id="f-target" type="number" min="0" step="1">
+        <span class="hint">Of net revenue, after ads</span>
+      </div>
+      <div class="field">
+        <label for="f-days">Days to sell one unit</label>
+        <input id="f-days" type="number" min="0" step="0.1">
+        <span class="hint">Average for the whole order, e.g. 0.9 is about 33 a month</span>
+      </div>
+    </div>
+    <div class="fullbox">
+      <label class="switch" for="f-full">
+        <input type="checkbox" id="f-full" role="switch">
+        <span class="track" aria-hidden="true"></span>
+        <span class="switchlabel">Ship with Mercado Libre Full</span>
+      </label>
+      <div class="fullopts" id="fullOpts">
+        <div class="field">
+          <label for="f-fullSize">Full size category</label>
+          <select id="f-fullSize">
+            <option value="S">Small, up to 12 x 15 x 25 cm ($0,83 per day)</option>
+            <option value="M">Medium, up to 28 x 36 x 51 cm ($2,33 per day)</option>
+            <option value="L">Large, up to 60 x 60 x 70 cm ($10,33 per day)</option>
+            <option value="XL">Extra large ($19,33 per day)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-fullIn">Sending stock to Full, total (CLP)</label>
+          <input id="f-fullIn" type="number" min="0" step="1000">
+          <span class="hint">0 if you drop it off yourself. Home pickup is priced by volume and distance</span>
+        </div>
+      </div>
+      <p class="hint" id="fullNote"></p>
+    </div>
+    <div class="callout" id="plnote"><strong>Example inputs.</strong> The RRP, ROAS and returns are placeholders to replace with your own numbers. Commissions come from each marketplace's seller fee table for bike pump categories (details under Edit marketplace fees). Commission is applied to the RRP with IVA included (confirmed in Mercado Libre's seller simulator). Fees are shown net of IVA: the IVA marketplaces bill on top is recovered as tax credit by a company, and shows up only in the IVA line below. Logistics fees outside Mercado Libre are not included unless you enter them.</div>
+    <div class="tablewrap" style="margin-top:14px">
+      <table>
+        <thead><tr><th>Line</th><th class="n">Per unit</th><th class="n">% of RRP</th><th class="n" id="plTotHead">Total</th></tr></thead>
+        <tbody id="pl"></tbody>
+      </table>
+    </div>
+    <div class="sumlist" id="plsum"></div>
+
+    <h3>Same product on each marketplace</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Marketplace</th><th class="n">Commission</th><th class="n">Profit/unit</th><th class="n">Margin</th></tr></thead>
+        <tbody id="cmp"></tbody>
+      </table>
+    </div>
+
+    <details id="mkset">
+      <summary>Edit marketplace fees</summary>
+      <p class="hint">Applies to all products. Rates are for the bike pump category and were read from each marketplace's own seller fee pages on 4 Nov 2026 (Sodimac and Own web store excepted, see the notes). Each marketplace can change its table and rates differ by category, so for another product type check the category rate and edit it here. Editing a number removes the "official table" tag.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Name</th><th class="n">Commission %</th><th class="n">Fixed fee (CLP)</th><th class="n">Fixed fee up to price (0 = always)</th><th class="n">Shipping you pay (CLP)</th><th class="n">Shipping from price (CLP)</th><th>Status</th><th></th></tr></thead>
+          <tbody id="mkbody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px"><button class="btn" type="button" id="mkAdd">Add marketplace</button></div>
+    </details>
+  </section>
+</div>
+
+<div id="lightbox" hidden><img alt="Reference photo, enlarged"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /*CALC-START*/
+  var IVA = 0.19;
+  function n(v) { v = parseFloat(v); return isFinite(v) && v >= 0 ? v : 0; }
+
+  function calcSim(s) {
+    var qty = Math.max(0, Math.round(n(s.qty)));
+    var goods = qty * n(s.price);
+    var weight = qty * n(s.kgu);
+    /* Volume: cartons of upc units, each L x W x H cm. Volumetric weight = carton cm3 / divisor (6000 air cargo, 5000 courier). */
+    var cartonCm3 = n(s.cl) * n(s.cw) * n(s.ch);
+    var upc = Math.max(1, Math.round(n(s.upc)) || 1);
+    var cartons = cartonCm3 > 0 ? Math.ceil(qty / upc) : 0;
+    var cbm = cartons * cartonCm3 / 1e6;
+    var vdiv = n(s.vdiv) || 6000;
+    var volWeight = cartons * cartonCm3 / vdiv;
+    var chargeable = Math.max(weight, volWeight);
+    var alloc = arguments[1] || null;
+    var mode = alloc ? 'lcl' : 'air';
+    var freight = alloc ? alloc.freight : chargeable * n(s.rate) + n(s.origin);
+    var ins = goods * n(s.insp) / 100;
+    var cif = goods + freight + ins;
+    var dutyRate = n(s.duty) / 100;
+    var duty = cif * dutyRate;
+    var ivaBase = cif + duty;
+    var iva = ivaBase * IVA;
+    var agent = alloc ? alloc.agent : n(s.agent);
+    var total = goods + freight + ins + duty + iva + agent;
+    var net = total - iva;
+    var dep = Math.min(100, n(s.dep)) / 100;
+    return {
+      mode: mode, alloc: alloc, cartons: cartons, cbm: cbm, volWeight: volWeight, chargeable: chargeable, vdiv: vdiv,
+      qty: qty, goods: goods, weight: weight, freight: freight, ins: ins, cif: cif,
+      dutyRate: dutyRate, duty: duty, ivaBase: ivaBase, iva: iva, agent: agent,
+      total: total, net: net, deposit: goods * dep,
+      perUnitNet: qty > 0 ? net / qty : 0,
+      perUnitGross: qty > 0 ? total / qty : 0
+    };
+  }
+
+  /* Combined LCL shipment: freight = rate x max(total m3, minimum m3), split by each product's volume;
+     the one customs agent and local cost is split by goods value. Returns { id: {freight, agent, cbm} }. */
+  function lclAlloc(products, cfg) {
+    var out = {};
+    if (!cfg || !cfg.on) return { map: out, totalCbm: 0, billed: 0, cost: 0, goods: 0, ids: [] };
+    var sel = products.filter(function (p) { return p.sim.lcl === true || p.sim.lcl === '1'; });
+    var base = sel.map(function (p) { return { id: p.id, r: calcSim(p.sim) }; });
+    var totalCbm = 0, goods = 0;
+    base.forEach(function (b) { totalCbm += b.r.cbm; goods += b.r.goods; });
+    var billed = sel.length ? Math.max(totalCbm, n(cfg.min)) : 0;
+    var cost = billed * n(cfg.rate);
+    base.forEach(function (b) {
+      out[b.id] = {
+        freight: totalCbm > 0 ? cost * b.r.cbm / totalCbm : 0,
+        agent: goods > 0 ? n(cfg.agent) * b.r.goods / goods : 0,
+        cbm: b.r.cbm, totalCbm: totalCbm, billed: billed
+      };
+    });
+    return { map: out, totalCbm: totalCbm, billed: billed, cost: cost, goods: goods, ids: sel.map(function (p) { return p.id; }) };
+  }
+
+  /* Mercado Libre Full, official ML Chile tariffs (ayuda 24253 and 15373, read 10 Nov 2026).
+     day = storage per unit per day; a, b, c = old-stock charge per unit per month at 4-6, 6-12 and 12+ months. */
+  var FULL = {
+    S: { day: 0.83, a: 140, b: 1450, c: 3000 },
+    M: { day: 2.33, a: 235, b: 2200, c: 3700 },
+    L: { day: 10.33, a: 630, b: 5700, c: 9800 },
+    XL: { day: 19.33, a: 825, b: 7500, c: 12500 }
+  };
+  function isMercadoLibre(mk) { return mk && (mk.id === 'ml' || mk.id === 'mlp' || /mercado ?libre/i.test(mk.name || '')); }
+  /* The whole order arrives at once and one unit sells every d days: unit i stays i*d days. */
+  function fullCost(Q, d, size) {
+    var t = FULL[size] || FULL.S;
+    if (Q <= 0 || d <= 0) return { store: 0, old: 0, avgDays: 0 };
+    var N = Math.min(Q, 20000), step = Q / N, sS = 0, sO = 0, sD = 0;
+    for (var i = 1; i <= N; i++) {
+      var age = i * step * d;
+      sD += age;
+      sS += age * t.day;
+      sO += t.a * Math.max(0, Math.min(age, 180) - 120) / 30 +
+            t.b * Math.max(0, Math.min(age, 365) - 180) / 30 +
+            t.c * Math.max(0, age - 365) / 30;
+    }
+    return { store: sS / N, old: sO / N, avgDays: sD / N };
+  }
+
+  function calcPL(r, pl, mk, fx) {
+    var rrp = n(pl.rrp);
+    var days = n(pl.days);
+    var full = isMercadoLibre(mk) && (pl.full === true || pl.full === '1');
+    var fc = full ? fullCost(r.qty, days, pl.fullSize) : { store: 0, old: 0, avgDays: 0 };
+    var fullIn = full && r.qty > 0 ? n(pl.fullIn) / r.qty : 0;
+    var fullTotal = fc.store + fc.old + fullIn;
+    var netRev = rrp / (1 + IVA);
+    var saleIva = rrp - netRev;
+    var commRate = n(mk.commission) / 100;
+    var comm = rrp * commRate;
+    var fixed = (n(mk.fixedMax) > 0 && rrp > n(mk.fixedMax)) ? 0 : n(mk.fixed);
+    var ship = rrp >= n(mk.shipMin) ? n(mk.ship) : 0;
+    var retRate = n(pl.returns) / 100;
+    var ret = netRev * retRate;
+    var landed = r.perUnitNet * n(fx);
+    var contribPre = netRev - comm - fixed - ship - fullTotal - ret - landed;
+    var roas = n(pl.roas);
+    var ads = roas > 0 ? rrp / roas : 0;
+    var profit = contribPre - ads;
+    var margin = netRev > 0 ? profit / netRev : 0;
+    var beRoas = contribPre > 0 ? rrp / contribPre : null;
+    var m = n(pl.target) / 100;
+    var a = roas > 0 ? 1 / roas : 0;
+    var k = (1 - retRate - m) / (1 + IVA) - commRate - a;
+    var tRrp = k > 0 ? (fixed + ship + fullTotal + landed) / k : null;
+    var absorb = (r.iva > 0 && saleIva > 0) ? Math.ceil(r.iva * n(fx) / saleIva) : 0;
+    var importIva = r.qty > 0 ? r.iva / r.qty * n(fx) : 0;
+    var feeIva = (comm + fixed + ship + fullTotal) * IVA;
+    var ivaPay = saleIva - importIva - feeIva;
+    var sellDays = r.qty * days;
+    var perMonth = days > 0 ? 30 / days : 0;
+    return {
+      full: full, fullStore: fc.store, fullOld: fc.old, fullIn: fullIn, fullTotal: fullTotal, avgDays: fc.avgDays,
+      days: days, sellDays: sellDays, perMonth: perMonth,
+      importIva: importIva, feeIva: feeIva, ivaPay: ivaPay,
+      rrp: rrp, netRev: netRev, saleIva: saleIva, comm: comm, fixed: fixed, ship: ship,
+      ret: ret, landed: landed, contribPre: contribPre, ads: ads, profit: profit,
+      margin: margin, beRoas: beRoas, tRrp: tRrp, absorb: absorb, roas: roas
+    };
+  }
+  /*CALC-END*/
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function grp(x) { return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function usd(v) {
+    var neg = v < 0, a = Math.abs(v);
+    var s = 'US$' + a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return neg ? '-' + s : s;
+  }
+  function clp(v) { var neg = Math.round(v) < 0; return (neg ? '-$' : '$') + grp(Math.abs(v)); }
+  function uid() { return Math.random().toString(36).slice(2, 8) + Date.now().toString(36); }
+
+  /* ---------- state ---------- */
+  var SIMF = ['qty', 'price', 'kgu', 'rate', 'origin', 'insp', 'duty', 'agent', 'dep', 'cl', 'cw', 'ch', 'upc', 'vdiv'];
+  var PLF = ['rrp', 'roas', 'returns', 'target', 'days', 'fullIn'];
+  var DEFAULT_SIM = { qty: '100', price: '0', kgu: '0.2', rate: '10', origin: '0', insp: '1', duty: '0', agent: '150', dep: '30',
+    cl: '0', cw: '0', ch: '0', upc: '100', vdiv: '6000', lcl: false };
+  var DEFAULT_PL = { rrp: '0', mk: 'ml', roas: '4', returns: '3', target: '20', days: '1', full: false, fullSize: 'S', fullIn: '0' };
+  var TIERS = [['$28 sample', 28], ['$27 (500+)', 27], ['$25 (1,000+)', 25], ['$22 (5,000+)', 22], ['$20 (10,000+)', 20]];
+
+  var MK_VERSION = 3;
+  function defaultMk() {
+    return [
+      { id: 'ml', name: 'Mercado Libre Clásica', commission: 12, fixed: 0, ship: 3050, shipMin: 19990, verified: true, official: true,
+        note: 'ML Chile fee search, Ciclismo > Accesorios > Bombines y Compresores > Compresores de Aire: Clásica 12% (the "Otros" and "Bombines de Mano" categories are 14%). Your seller simulator confirmed the % is taken on the full price with IVA. Free shipping is mandatory from $19.990: ML table shows $3.050 for up to 0.3 kg (green or no reputation; the 50% discount label is unclear). Checked 4 Nov 2026.' },
+      { id: 'mlp', name: 'Mercado Libre Premium', commission: 16, fixed: 0, ship: 3050, shipMin: 19990, verified: true, official: true,
+        note: 'Same category: Premium 16% (18% in "Otros"), 12 installments without interest. Same shipping as Clásica. Checked 4 Nov 2026.' },
+      { id: 'fala', name: 'Falabella.com', commission: 15, fixed: 0, ship: 0, verified: true, official: true,
+        note: 'Falabella seller commission table dated 20 Jul 2026: Deportes > Bicicletas y accesorios de ciclismo > Accesorios/repuestos para bicicletas 15%. Logistics co-financing fees are separate and not included.' },
+      { id: 'paris', name: 'Paris.cl', commission: 15, fixed: 0, ship: 0, verified: true, official: true,
+        note: 'Paris marketplace commission table (undated): Fitness > Bicicleta 15%. Assumes the Bicicleta family covers pumps. Logistics costs are separate and not included.' },
+      { id: 'ripley', name: 'Ripley.cl', commission: 18, fixed: 990, fixedMax: 5000, ship: 0, verified: true, official: true,
+        note: 'Ripley commission table: Ciclismo > Accesorios > Bombines y Compresores 18% (bicycles themselves 15%). $990 fixed fee per unit only when the price is $5.000 or less. Logistics costs are separate and not included.' },
+      { id: 'sodimac', name: 'Sodimac.cl', commission: 15, fixed: 0, ship: 0, verified: false, official: false,
+        note: 'No public commission table found. "Vende en Sodimac" leads to the Falabella seller program, so 15% is a placeholder borrowed from Falabella. Ask the seller program for the Sodimac rate.' },
+      { id: 'web', name: 'Own web store', commission: 0, fixed: 0, ship: 0, verified: false, official: false,
+        note: 'No marketplace commission. Add your payment gateway fee here if you want it in the P&L.' },
+      { id: 'direct', name: 'Direct sale', commission: 0, fixed: 0, ship: 0, verified: true, official: false, note: '' }
+    ];
+  }
+  function blankProduct(name) {
+    return {
+      id: 'p_' + uid(), name: name || 'New product', created: Date.now(), notes: '', links: [], photos: [],
+      sim: Object.assign({}, DEFAULT_SIM), pl: Object.assign({}, DEFAULT_PL)
+    };
+  }
+  function seedProduct() {
+    var p = blankProduct('LW-A5Mini mini pump');
+    p.id = 'p_seed';
+    p.created = 1;
+    p.notes = 'Supplier: Langwei Technology (Ningbo) Co., Ltd., listed on Alibaba as a multispecialty supplier, so factory status is not confirmed.\nBefore any deposit: written confirmation of Form F (Chile-China FTA certificate), invoice issued by the Chinese company, UN3481 classification, UN38.3 report and MSDS for the battery.';
+    p.links = [{ url: 'https://www.alibaba.com/product-detail/100PSI-Lightweight-Wireless-Rechargeable-Bicycle-Tire_1601941323078.html' }];
+    p.sim.price = '28';
+    p.pl.rrp = '49990';
+    return p;
+  }
+  function normProduct(p) {
+    p = p || {};
+    return {
+      id: p.id || ('p_' + uid()), name: p.name || 'Untitled', created: p.created || Date.now(),
+      notes: p.notes || '', links: Array.isArray(p.links) ? p.links : [], photos: Array.isArray(p.photos) ? p.photos : [],
+      sim: Object.assign({}, DEFAULT_SIM, p.sim || {}), pl: Object.assign({}, DEFAULT_PL, p.pl || {})
+    };
+  }
+  function normSettings(s) {
+    s = s || {};
+    var mk = Array.isArray(s.mk) && s.mk.length ? s.mk : defaultMk();
+    if (s.v !== MK_VERSION) {
+      /* Upgrade older saved fees: replace untouched placeholders with the sourced ones, keep anything the user edited, add new marketplaces. */
+      var defs = defaultMk();
+      var byId = {};
+      mk.forEach(function (m) { byId[m.id] = m; });
+      var merged = defs.map(function (d) {
+        var old = byId[d.id];
+        return old && old.verified && !old.official && d.id !== 'direct' ? old : d;
+      });
+      mk.forEach(function (m) { if (!defs.some(function (d) { return d.id === m.id; })) merged.push(m); });
+      mk = merged;
+    }
+    var lcl = Object.assign({ on: false, rate: '350', min: '1', agent: '0' }, s.lcl || {});
+    /* The US$350 door-to-door quote includes the customs agent (user, 10 Nov 2026): reset the old 150 default once. */
+    if (lcl.v !== 2) { if (String(lcl.agent) === '150') lcl.agent = '0'; lcl.v = 2; }
+    return { v: MK_VERSION, fx: s.fx !== undefined && s.fx !== '' ? s.fx : 950, mk: mk, lcl: lcl };
+  }
+
+  var S = { products: [seedProduct()], settings: normSettings(), active: 'p_seed' };
+  function cur() {
+    for (var i = 0; i < S.products.length; i++) if (S.products[i].id === S.active) return S.products[i];
+    return S.products[0] || null;
+  }
+  function mkById(id) {
+    var l = S.settings.mk;
+    for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
+    return l[0] || { id: 'x', name: 'None', commission: 0, fixed: 0, ship: 0, verified: true };
+  }
+
+  /* ---------- persistence ---------- */
+  var mode = 'pending';
+  var dbCol = null;
+  var loaded = false;
+  var lastWritten = {};
+  var timers = {};
+  var chain = {};
+  var settingsTimer = null;
+
+  function canon(o) {
+    if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
+    if (o && typeof o === 'object') {
+      return '{' + Object.keys(o).sort().map(function (k) { return JSON.stringify(k) + ':' + canon(o[k]); }).join(',') + '}';
+    }
+    return JSON.stringify(o);
+  }
+  function setStatus(s) {
+    var m = { saved: 'Saved', saving: 'Saving...', local: 'Saved in this browser', unsaved: 'Not saved', wait: 'Connecting...' };
+    var el = $('status');
+    el.textContent = m[s] || '';
+    el.setAttribute('data-s', s);
+  }
+  function saveLocal() {
+    try {
+      localStorage.setItem('importsim.v2', JSON.stringify({ products: S.products, settings: S.settings, active: S.active }));
+      setStatus('local');
+    } catch (e) { setStatus('unsaved'); }
+  }
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem('importsim.v2');
+      if (!raw) return false;
+      var d = JSON.parse(raw);
+      if (d && Array.isArray(d.products) && d.products.length) {
+        S.products = d.products.map(normProduct);
+        S.settings = normSettings(d.settings);
+        S.active = d.active && S.products.some(function (p) { return p.id === d.active; }) ? d.active : S.products[0].id;
+        return true;
+      }
+    } catch (e) { }
+    return false;
+  }
+  function touch(p) {
+    setStatus('saving');
+    clearTimeout(timers[p.id]);
+    timers[p.id] = setTimeout(function () { delete timers[p.id]; flush(p); }, 600);
+  }
+  function flush(p) {
+    if (mode === 'pending') { touch(p); return; }
+    if (mode === 'local') { saveLocal(); return; }
+    if (mode !== 'db') return;
+    var data = JSON.parse(JSON.stringify(p));
+    lastWritten[p.id] = canon(data);
+    chain[p.id] = (chain[p.id] || Promise.resolve()).then(function () {
+      return dbCol.doc(p.id).set(data);
+    }).then(function () { if (!Object.keys(timers).length && !settingsTimer) setStatus('saved'); },
+      function () { setStatus('unsaved'); });
+  }
+  function touchSettings() {
+    setStatus('saving');
+    clearTimeout(settingsTimer);
+    settingsTimer = setTimeout(function () { settingsTimer = null; flushSettings(); }, 600);
+  }
+  var lastSettings = '';
+  function flushSettings() {
+    if (mode === 'pending') { touchSettings(); return; }
+    if (mode === 'local') { saveLocal(); return; }
+    if (mode !== 'db') return;
+    var data = JSON.parse(JSON.stringify(S.settings));
+    lastSettings = canon(data);
+    chain.settings = (chain.settings || Promise.resolve()).then(function () {
+      return dbCol.doc('settings').set(data);
+    }).then(function () { if (!Object.keys(timers).length && !settingsTimer) setStatus('saved'); },
+      function () { setStatus('unsaved'); });
+  }
+  function removeStored(id) {
+    if (mode === 'db') {
+      delete lastWritten[id];
+      chain[id] = (chain[id] || Promise.resolve()).then(function () { return dbCol.doc(id).delete(); }).then(null, function () { setStatus('unsaved'); });
+    } else if (mode === 'local') { saveLocal(); }
+  }
+  function formFocused() {
+    var a = document.activeElement;
+    return a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.id !== 'fx' ? true : (a && a.id === 'fx');
+  }
+  function onSnap(snap) {
+    var prods = [], settings = null;
+    snap.docs.forEach(function (d) {
+      var data = d.data();
+      if (!data) return;
+      if (d.id === 'settings') settings = data;
+      else if (d.id.indexOf('p_') === 0) prods.push(data);
+    });
+    if (!snap.metadata.fromCache) { loaded = true; clearTimeout(loadTimer); if (!Object.keys(timers).length && !settingsTimer) setStatus('saved'); }
+    var changed = false;
+    if (prods.length) {
+      var next = [];
+      prods.forEach(function (data) {
+        var local = S.products.filter(function (x) { return x.id === data.id; })[0];
+        if (local && (timers[data.id] || lastWritten[data.id] === canon(data))) next.push(local);
+        else { next.push(normProduct(data)); changed = true; }
+      });
+      S.products.forEach(function (x) { if (timers[x.id] && !next.some(function (y) { return y.id === x.id; })) next.push(x); });
+      if (next.length !== S.products.length) changed = true;
+      next.sort(function (a, b) { return (a.created || 0) - (b.created || 0); });
+      S.products = next;
+      if (!S.products.some(function (p) { return p.id === S.active; })) S.active = S.products[0].id;
+    }
+    if (settings && canon(settings) !== lastSettings) {
+      S.settings = normSettings(settings); lastSettings = canon(settings); changed = true;
+    }
+    if (changed) {
+      renderTabs(); fillSettingsForm(); renderMkEditor(); refreshMkSelect();
+      if (!formFocused()) fillForm(cur());
+      renderOutputs();
+    }
+  }
+  var loadTimer = null;
+
+  /* ---------- rendering ---------- */
+  function row(label, amount, cls, note) {
+    return '<tr class="' + (cls || '') + '"><td>' + label + (note ? '<span class="note">' + note + '</span>' : '') +
+      '</td><td class="n">' + usd(amount) + '</td></tr>';
+  }
+
+  function renderSim(p, r) {
+    var fx = n(S.settings.fx);
+    var perUnit = r.perUnitNet;
+    $('s-total').textContent = usd(r.total);
+    $('s-net').textContent = usd(r.net);
+    $('s-unit').textContent = usd(perUnit);
+    $('s-unit-iva').textContent = usd(r.perUnitGross);
+    $('s-total-clp').textContent = fx > 0 ? clp(r.total * fx) : '';
+    $('s-net-clp').textContent = fx > 0 ? clp(r.net * fx) : '';
+    $('s-unit-clp').textContent = fx > 0 ? clp(perUnit * fx) : '';
+    var kg = function (v) { return v.toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' kg'; };
+    $('wtotal').textContent = r.qty > 0 ? 'Shipment: ' + kg(r.weight) : '';
+    $('volHint').textContent = r.cbm > 0
+      ? r.cartons + (r.cartons === 1 ? ' carton, ' : ' cartons, ') + m3(r.cbm) + ' (' + (r.cbm / r.qty * 1e6).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' cm³ per unit). Volumetric weight ' + kg(r.volWeight) + ' vs actual ' + kg(r.weight) + ', air charges ' + kg(r.chargeable) + '.'
+      : 'Add the carton size to get the volume (needed for sea LCL) and the volumetric weight (air charges whichever is higher).';
+    var lclOn = r.mode === 'lcl';
+    ['f-rate', 'f-origin', 'f-vdiv', 'f-agent'].forEach(function (id) { $(id).disabled = lclOn; });
+
+    $('build').innerHTML =
+      row('Goods, ' + r.qty.toLocaleString('en-US') + ' units at ' + usd(n(p.sim.price)) + ' FCA', r.goods) +
+      (lclOn
+        ? row('Sea freight, share of LCL shipment', r.freight, '', m3(r.cbm) + ' of ' + m3(r.alloc.totalCbm) + ' in the shipment, billed ' + m3(r.alloc.billed))
+        : row('Air freight and origin charges', r.freight, '', r.chargeable > r.weight
+            ? 'Charged on volumetric weight ' + kg(r.chargeable) + ' (actual ' + kg(r.weight) + ')'
+            : kg(r.chargeable) + (r.cbm > 0 ? ', volumetric ' + kg(r.volWeight) : ''))) +
+      row('Insurance', r.ins) +
+      row('CIF value', r.cif, 'sub', 'Base for duty and IVA') +
+      row('Customs duty ' + (r.dutyRate * 100).toFixed(0) + '%', r.duty) +
+      row('IVA 19%', r.iva, '', 'On CIF plus duty: ' + usd(r.ivaBase)) +
+      row(lclOn ? 'Customs agent and local, share of shipment' : 'Agent, handling and local delivery', r.agent, '', lclOn ? 'Split by goods value' : '') +
+      row('Total cash out', r.total, 'total') +
+      row('IVA credit you can use later', -r.iva, 'credit', 'Offsets IVA on your sales') +
+      row('Net cost', r.net, 'total') +
+      row('Landed cost per unit incl. IVA', r.perUnitGross, '', 'Total cash out divided by units') +
+      row('Net cost per unit (after IVA credit)', perUnit, 'final', fx > 0 ? clp(perUnit * fx) + ' at ' + grp(fx) + ' CLP per USD' : '');
+
+    var parts = [
+      { k: 'Goods', v: r.goods, c: 'var(--s-goods)' },
+      { k: 'Freight and insurance', v: r.freight + r.ins, c: 'var(--s-freight)' },
+      { k: 'Duty', v: r.duty, c: 'var(--s-duty)' },
+      { k: 'IVA', v: r.iva, c: 'var(--s-iva)' },
+      { k: 'Agent and local', v: r.agent, c: 'var(--s-agent)' }
+    ];
+    var bar = '', leg = '';
+    parts.forEach(function (x) {
+      var w = r.total > 0 ? (x.v / r.total) * 100 : 0;
+      if (w > 0) bar += '<span style="width:' + w + '%;background:' + x.c + '"></span>';
+      leg += '<li><i style="background:' + x.c + '"></i>' + x.k + ' <b>' + w.toFixed(1) + '%</b></li>';
+    });
+    $('bar').innerHTML = bar;
+    $('legend').innerHTML = leg;
+
+    var steps = [
+      { w: 'Order placed', note: 'Supplier deposit', v: r.deposit },
+      { w: 'Before shipping', note: 'Balance to supplier', v: r.goods - r.deposit },
+      { w: 'Shipment', note: 'Freight and insurance', v: r.freight + r.ins },
+      { w: 'Customs release', note: 'Duty, IVA and agent, paid before pickup', v: r.duty + r.iva + r.agent },
+      { w: 'Next month, F29', note: 'IVA credit, only if you have sales IVA to offset', v: -r.iva, credit: true }
+    ];
+    var run = 0, html = '';
+    steps.forEach(function (s) {
+      run += s.v;
+      html += '<tr class="' + (s.credit ? 'credit' : '') + '"><td>' + s.w + '<span class="note">' + s.note +
+        '</span></td><td class="n">' + usd(s.v) + '</td><td class="n">' + usd(run) + '</td></tr>';
+    });
+    $('flow').innerHTML = html;
+
+    var an = $('agentnote');
+    if (lclOn) {
+      an.innerHTML = '<strong>Shipping in the combined LCL shipment.</strong> Freight, origin and agent inputs on the left are not used for this product while it is ticked in "All products". The customs agent rule applies to the whole shipment: ' + usd(LCL.goods) + ' in goods.';
+    } else if (r.goods > 1000) {
+      an.innerHTML = '<strong>Customs agent required.</strong> Commercial imports above about US$1,000 need a licensed customs agent (agente de aduanas) in Chile. This order is ' + usd(r.goods) + ' in goods.';
+    } else {
+      an.innerHTML = '<strong>Under the US$1,000 line.</strong> Commercial goods up to about US$1,000 may clear without an agent. Ask your courier or customs agent which process applies.';
+    }
+
+    var chips = document.querySelectorAll('#chips .chip');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].setAttribute('aria-pressed', parseFloat(chips[i].getAttribute('data-price')) === n(p.sim.price) ? 'true' : 'false');
+    }
+  }
+
+  function plrow(label, v, cls, q, qty, rrp, note) {
+    var pct = rrp > 0 ? (v / rrp * 100).toFixed(1) + '%' : '-';
+    return '<tr class="' + (cls || '') + '"><td>' + label + (note ? '<span class="note">' + note + '</span>' : '') +
+      '</td><td class="n">' + clp(v) + '</td><td class="n">' + pct + '</td><td class="n">' + clp(v * qty) + '</td></tr>';
+  }
+
+  function profitOn(p, r, mk) {
+    return calcPL(r, p.pl, mk, S.settings.fx);
+  }
+
+  function renderPL(p, r) {
+    var mk = mkById(p.pl.mk);
+    var fx = n(S.settings.fx);
+    var q = calcPL(r, p.pl, mk, fx);
+    var qty = r.qty;
+    var rrp = q.rrp;
+    var fullOn = p.pl.full === true || p.pl.full === '1';
+    $('fullOpts').hidden = !fullOn;
+    $('fullNote').textContent = !fullOn ? 'Off: you store and ship from your own place. Turn on to add Full storage and old-stock charges.'
+      : !isMercadoLibre(mk) ? 'Full only applies to Mercado Libre. It is ignored for ' + mk.name + ', but still counted in the Mercado Libre rows of the comparison.'
+      : (n(p.pl.days) <= 0 ? 'Enter the days to sell one unit, storage cost depends on it. '
+      : '') + 'Daily storage per unit by size, plus old-stock charges for units stored more than 4 months (Mercado Libre Chile tariffs). Commission and shipping stay the same. Check that lithium battery products are accepted in Full before relying on it.';
+    $('plTotHead').textContent = 'Total, ' + qty.toLocaleString('en-US') + ' units';
+    var html = '';
+    html += plrow('RRP (consumer price, IVA included)', rrp, 'sub', q, qty, rrp);
+    html += plrow('IVA on sale (19%)', -q.saleIva, 'neg', q, qty, rrp);
+    html += plrow('Net revenue', q.netRev, 'sub', q, qty, rrp);
+    html += plrow('Marketplace commission', -q.comm, 'neg', q, qty, rrp, mk.name + ', ' + n(mk.commission) + '% of RRP');
+    html += plrow('Marketplace fixed fee', -q.fixed, 'neg', q, qty, rrp,
+      n(mk.fixed) > 0 && n(mk.fixedMax) > 0 ? 'Only when the price is ' + clp(n(mk.fixedMax)) + ' or less' : '');
+    html += plrow('Shipping to customer you pay', -q.ship, 'neg', q, qty, rrp,
+      n(mk.ship) > 0 && n(mk.shipMin) > 0 ? (q.ship > 0 ? 'Free shipping required from ' + clp(n(mk.shipMin)) : 'Not required below ' + clp(n(mk.shipMin)) + ', buyer pays') : '');
+    if (q.full) {
+      html += plrow('Full storage', -q.fullStore, 'neg', q, qty, rrp,
+        'Average ' + q.avgDays.toFixed(0) + ' days in stock per unit at $' + (FULL[p.pl.fullSize] || FULL.S).day.toFixed(2).replace('.', ',') + ' a day');
+      if (q.fullOld > 0) html += plrow('Full old-stock charges', -q.fullOld, 'neg', q, qty, rrp, 'Units still in stock after 4 months');
+      if (q.fullIn > 0) html += plrow('Sending stock to Full', -q.fullIn, 'neg', q, qty, rrp, clp(n(p.pl.fullIn)) + ' spread over ' + qty.toLocaleString('en-US') + ' units');
+    }
+    html += plrow('Returns and losses', -q.ret, 'neg', q, qty, rrp, n(p.pl.returns) + '% of net revenue');
+    html += plrow('Product landed cost, net of IVA credit', -q.landed, 'neg', q, qty, rrp, usd(r.perUnitNet) + ' at ' + grp(fx) + ' CLP per USD');
+    html += plrow('Contribution before ads', q.contribPre, 'sub', q, qty, rrp);
+    html += plrow('Ad spend', -q.ads, 'neg', q, qty, rrp, q.roas > 0 ? 'ROAS ' + q.roas + 'x on RRP' : 'No ads');
+    html += plrow('Contribution profit', q.profit, 'final', q, qty, rrp, q.netRev > 0 ? 'Margin ' + (q.margin * 100).toFixed(1) + '% of net revenue' : '');
+    $('pl').innerHTML = html;
+
+    var s = '';
+    var cls = q.profit >= 0 ? 'pos' : 'neg';
+    s += '<div class="line"><span>Profit per unit</span><span class="' + cls + '">' + clp(q.profit) + ' (' + (q.margin * 100).toFixed(1) + '%)</span></div>';
+    s += '<div class="line"><span>Profit on this order</span><span class="' + cls + '">' + clp(q.profit * qty) + '</span></div>';
+    if (q.days > 0 && qty > 0) {
+      var months = q.sellDays / 30;
+      s += '<div class="line"><span>Sales pace</span><span>' + (q.perMonth >= 10 ? Math.round(q.perMonth) : q.perMonth.toFixed(1)) + ' units a month</span></div>';
+      s += '<div class="line"><span>Time to sell the whole order</span><span>' + Math.round(q.sellDays) + ' days (' + (months < 10 ? months.toFixed(1) : Math.round(months)) + ' months)</span></div>';
+      s += '<div class="line"><span>Profit per month while selling</span><span class="' + cls + '">' + clp(q.profit * Math.min(q.perMonth, qty)) + '</span></div>';
+    }
+    if (q.beRoas === null) {
+      s += '<div class="line"><span>Break-even ROAS</span><span class="neg">Loses money before ads</span></div>';
+    } else {
+      s += '<div class="line"><span>Break-even ROAS</span><span>' + q.beRoas.toFixed(2) + 'x' + (q.roas > 0 ? ' (yours ' + q.roas + 'x)' : '') + '</span></div>';
+    }
+    if (q.tRrp === null) {
+      s += '<div class="line"><span>RRP for ' + n(p.pl.target) + '% margin</span><span class="neg">Not reachable with these costs</span></div>';
+    } else {
+      s += '<div class="line"><span>RRP for ' + n(p.pl.target) + '% margin</span><span>' + clp(Math.ceil(q.tRrp / 10) * 10) + '</span></div>';
+    }
+    s += '<div class="line"><span>IVA you pay the SII per unit (F29)<span class="hint" style="display:block">' + clp(q.saleIva) + ' collected, minus ' + clp(q.importIva) + ' import IVA and ' + clp(q.feeIva) + ' IVA on marketplace fees</span></span><span>' + clp(q.ivaPay) + '</span></div>';
+    if (q.absorb > 0) {
+      s += '<div class="line"><span>Units to sell before the import IVA credit is used</span><span>' + grp(q.absorb) + (q.absorb > qty ? ' (more than this order)' : '') + '</span></div>';
+    }
+    $('plsum').innerHTML = s;
+
+    var best = -Infinity, rows = [];
+    S.settings.mk.forEach(function (m) {
+      var x = calcPL(r, p.pl, m, fx);
+      rows.push({ m: m, x: x });
+      if (x.profit > best) best = x.profit;
+    });
+    var c = '';
+    rows.forEach(function (o) {
+      var isSel = o.m.id === mk.id;
+      c += '<tr class="' + (isSel ? 'sel' : '') + '"><td>' + esc(o.m.name) + (o.m.verified ? '' : ' <span class="badge warn">placeholder</span>') +
+        (o.x.profit === best && rows.length > 1 && rrp > 0 ? ' <span class="badge">best</span>' : '') +
+        '</td><td class="n">' + n(o.m.commission) + '%</td><td class="n ' + (o.x.profit >= 0 ? 'pos' : 'neg') + '">' + clp(o.x.profit) +
+        '</td><td class="n">' + (o.x.margin * 100).toFixed(1) + '%</td></tr>';
+    });
+    $('cmp').innerHTML = c;
+  }
+
+  var LCL = { map: {}, totalCbm: 0, billed: 0, cost: 0, goods: 0, ids: [] };
+  function simFor(p) { return calcSim(p.sim, LCL.map[p.id]); }
+  function m3(v) { return v.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' m³'; }
+
+  function renderOverview() {
+    var fx = n(S.settings.fx);
+    var cfg = S.settings.lcl;
+    var h = '';
+    var tot = { qty: 0, goods: 0, cbm: 0, total: 0, net: 0, iva: 0, profit: 0, netRev: 0, n: 0, missingVol: [], noPrice: [] };
+    S.products.forEach(function (p) {
+      var r = simFor(p);
+      var mk = mkById(p.pl.mk);
+      var q = calcPL(r, p.pl, mk, fx);
+      var has = n(p.sim.price) > 0;
+      var inL = p.sim.lcl === true || p.sim.lcl === '1';
+      if (cfg.on && inL) {
+        tot.n++; tot.qty += r.qty; tot.goods += r.goods; tot.cbm += r.cbm; tot.total += r.total; tot.net += r.net; tot.iva += r.iva;
+        if (q.rrp > 0) { tot.profit += q.profit * r.qty; tot.netRev += q.netRev * r.qty; } else tot.noPrice.push(p.name || 'Untitled');
+        if (!(r.cbm > 0)) tot.missingVol.push(p.name || 'Untitled');
+      }
+      h += '<tr data-id="' + esc(p.id) + '" class="' + (p.id === S.active ? 'active' : '') + '">' +
+        '<td><input type="checkbox" class="lclpick" data-id="' + esc(p.id) + '"' + (inL ? ' checked' : '') + (cfg.on ? '' : ' disabled') +
+        ' aria-label="Include ' + esc(p.name || 'Untitled') + ' in the LCL shipment"></td>' +
+        '<td><button type="button" class="pname" data-id="' + esc(p.id) + '">' + esc(p.name || 'Untitled') + '</button></td>' +
+        '<td class="n">' + r.qty.toLocaleString('en-US') + '</td>' +
+        '<td class="n">' + (r.cbm > 0 ? m3(r.cbm) : '-') + '</td>' +
+        '<td class="n">' + (has ? usd(n(p.sim.price)) : '-') + '</td>' +
+        '<td class="n">' + (has ? usd(r.perUnitNet) : '-') + '</td>' +
+        '<td class="n">' + (q.rrp > 0 ? clp(q.rrp) : '-') + '</td>' +
+        '<td>' + esc(mk.name) + '</td>' +
+        '<td class="n ' + (has && q.rrp > 0 ? (q.profit >= 0 ? 'pos' : 'neg') : '') + '">' + (has && q.rrp > 0 ? clp(q.profit) : '-') + '</td>' +
+        '<td class="n">' + (has && q.rrp > 0 ? (q.margin * 100).toFixed(1) + '%' : '-') + '</td></tr>';
+    });
+    $('overviewBody').innerHTML = h;
+
+    /* Shipment totals */
+    $('lclOpts').hidden = !cfg.on;
+    var foot = '', sum = '', note = '';
+    if (cfg.on && tot.n > 0) {
+      var margin = tot.netRev > 0 ? tot.profit / tot.netRev : 0;
+      foot = '<tr><td></td><td>Shipment total (' + tot.n + (tot.n === 1 ? ' product' : ' products') + ')</td>' +
+        '<td class="n">' + tot.qty.toLocaleString('en-US') + '</td><td class="n">' + m3(tot.cbm) + '</td>' +
+        '<td class="n">' + usd(tot.goods) + '<span class="note">goods total</span></td><td class="n">' + usd(tot.net) + '<span class="note">net cost total</span></td><td></td><td></td>' +
+        '<td class="n ' + (tot.profit >= 0 ? 'pos' : 'neg') + '">' + clp(tot.profit) + '<span class="note">contribution total</span></td><td class="n">' + (margin * 100).toFixed(1) + '%</td></tr>';
+      var used = LCL.billed > 0 ? Math.min(1, tot.cbm / LCL.billed) : 0;
+      sum = '<div class="fill" role="img" aria-label="Share of billed volume used"><span style="width:' + (used * 100).toFixed(1) + '%"></span></div>' +
+        '<div class="hint">' + m3(tot.cbm) + ' used of ' + m3(LCL.billed) + ' billed (' + (used * 100).toFixed(0) + '%)' +
+        (LCL.billed > tot.cbm ? '. You pay for ' + m3(LCL.billed - tot.cbm) + ' of empty space' : '') + '</div>' +
+        '<div class="lclstats" style="margin-top:10px">' +
+        '<div><div class="k">Goods value (FCA)</div><div class="v">' + usd(tot.goods) + '</div></div>' +
+        '<div><div class="k">Sea freight, whole shipment</div><div class="v">' + usd(LCL.cost) + '</div></div>' +
+        '<div><div class="k">Total cash out</div><div class="v">' + usd(tot.total) + '</div></div>' +
+        '<div><div class="k">Net cost after IVA credit</div><div class="v">' + usd(tot.net) + '</div></div>' +
+        '<div><div class="k">Total contribution</div><div class="v ' + (tot.profit >= 0 ? 'pos' : 'neg') + '">' + clp(tot.profit) + '</div></div>' +
+        '</div>';
+      var warn = [];
+      if (tot.missingVol.length) warn.push('No carton size yet for ' + tot.missingVol.join(', ') + ', so they take no freight share. Enter carton size and units per carton in each product.');
+      if (tot.noPrice.length) warn.push('No RRP yet for ' + tot.noPrice.join(', ') + ', so they are left out of the contribution.');
+      if (tot.goods > 1000) warn.push('Goods above US$1,000: the shipment needs a customs agent.');
+      note = warn.join(' ') + (warn.length ? ' ' : '') + 'Freight is split by volume and the agent cost by goods value. Each product’s landed cost and P&L below use its share. Ask the forwarder what the price includes, the transit time, and whether lithium battery products are accepted by sea.';
+    } else if (cfg.on) {
+      note = 'Tick the products to include in the table below.';
+    } else {
+      note = 'Off: each product ships on its own by air, using its own freight inputs.';
+    }
+    $('overviewFoot').innerHTML = foot;
+    $('lclSummary').innerHTML = sum;
+    $('lclNote').textContent = note;
+  }
+
+  function renderTabs() {
+    var h = '';
+    S.products.forEach(function (p) {
+      h += '<button type="button" class="tab" role="tab" data-id="' + esc(p.id) + '" aria-selected="' + (p.id === S.active) + '">' + esc(p.name || 'Untitled') + '</button>';
+    });
+    h += '<button type="button" class="tab add" id="addProduct">+ Add product</button>';
+    $('tabs').innerHTML = h;
+  }
+
+  function renderOutputs() {
+    var p = cur();
+    if (!p) return;
+    LCL = lclAlloc(S.products, S.settings.lcl);
+    var r = simFor(p);
+    renderSim(p, r);
+    renderPL(p, r);
+    renderOverview();
+  }
+
+  function renderLinks() {
+    var p = cur();
+    var h = '';
+    (p.links || []).forEach(function (l, i) {
+      var label = l.url;
+      try { var u = new URL(l.url); label = u.hostname.replace(/^www\./, '') + (u.pathname.length > 1 ? u.pathname : ''); } catch (e) { }
+      h += '<li><a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(l.url) + '">' + esc(label) + '</a>' +
+        '<button type="button" class="x" data-i="' + i + '" aria-label="Remove link">&times;</button></li>';
+    });
+    $('links').innerHTML = h;
+  }
+  function photoSrc(ph) { return ph.id ? '/_blob/' + ph.id : (ph.data || ''); }
+  function renderPhotos() {
+    var p = cur();
+    var h = '';
+    (p.photos || []).forEach(function (ph, i) {
+      h += '<div class="ph"><button type="button" class="open" data-i="' + i + '" aria-label="Open photo ' + (i + 1) + '"><img src="' + esc(photoSrc(ph)) + '" alt="Reference photo ' + (i + 1) + '"></button>' +
+        '<button type="button" class="x" data-i="' + i + '" aria-label="Remove photo">&times;</button></div>';
+    });
+    $('photos').innerHTML = h;
+  }
+
+  function fillForm(p) {
+    if (!p) return;
+    $('f-name').value = p.name;
+    $('f-notes').value = p.notes || '';
+    SIMF.forEach(function (k) { $('f-' + k).value = p.sim[k]; });
+    PLF.forEach(function (k) { $('f-' + k).value = p.pl[k]; });
+    $('f-full').checked = p.pl.full === true || p.pl.full === '1';
+    $('f-fullSize').value = FULL[p.pl.fullSize] ? p.pl.fullSize : 'S';
+    refreshMkSelect();
+    renderLinks();
+    renderPhotos();
+  }
+  function fillSettingsForm() {
+    $('fx').value = S.settings.fx;
+    var l = S.settings.lcl;
+    $('f-lcl').checked = !!l.on;
+    $('lcl-rate').value = l.rate; $('lcl-min').value = l.min; $('lcl-agent').value = l.agent;
+  }
+  function refreshMkSelect() {
+    var p = cur();
+    var sel = $('f-mk');
+    var h = '';
+    S.settings.mk.forEach(function (m) { h += '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>'; });
+    sel.innerHTML = h;
+    sel.value = p ? mkById(p.pl.mk).id : '';
+  }
+  function renderMkEditor() {
+    var h = '';
+    S.settings.mk.forEach(function (m, i) {
+      h += '<tr data-i="' + i + '"><td><input type="text" data-k="name" value="' + esc(m.name) + '" aria-label="Marketplace name">' +
+        (m.note ? '<span class="hint" style="display:block;margin-top:4px;max-width:46ch;white-space:normal">' + esc(m.note) + '</span>' : '') + '</td>' +
+        '<td class="n"><input type="number" min="0" step="0.1" data-k="commission" value="' + esc(m.commission) + '" aria-label="Commission percent"></td>' +
+        '<td class="n"><input type="number" min="0" step="100" data-k="fixed" value="' + esc(m.fixed) + '" aria-label="Fixed fee in CLP"></td>' +
+        '<td class="n"><input type="number" min="0" step="100" data-k="fixedMax" value="' + esc(m.fixedMax || 0) + '" aria-label="Fixed fee applies up to this price, 0 means always"></td>' +
+        '<td class="n"><input type="number" min="0" step="100" data-k="ship" value="' + esc(m.ship) + '" aria-label="Shipping you pay in CLP"></td>' +
+        '<td class="n"><input type="number" min="0" step="100" data-k="shipMin" value="' + esc(m.shipMin || 0) + '" aria-label="Shipping applies from this price"></td>' +
+        '<td class="vb">' + (m.official ? '<span class="badge">official table</span>' : (m.verified ? '<span class="badge">edited</span>' : '<span class="badge warn">placeholder</span>')) + '</td>' +
+        '<td><button type="button" class="x" data-del="1" aria-label="Remove marketplace">&times;</button></td></tr>';
+    });
+    $('mkbody').innerHTML = h;
+  }
+
+  function selectProduct(id) {
+    S.active = id;
+    renderTabs();
+    fillForm(cur());
+    renderOutputs();
+    $('del').removeAttribute('data-confirm');
+    $('del').textContent = 'Delete';
+    if (mode === 'local') saveLocal();
+  }
+
+  /* ---------- events ---------- */
+  function bindInputs() {
+    SIMF.forEach(function (k) {
+      var el = $('f-' + k);
+      var h = function () { var p = cur(); if (!p) return; p.sim[k] = el.value; touch(p); renderOutputs(); };
+      el.addEventListener('input', h); el.addEventListener('change', h);
+    });
+    PLF.forEach(function (k) {
+      var el = $('f-' + k);
+      var h = function () { var p = cur(); if (!p) return; p.pl[k] = el.value; touch(p); renderOutputs(); };
+      el.addEventListener('input', h); el.addEventListener('change', h);
+    });
+    $('f-mk').addEventListener('change', function () { var p = cur(); p.pl.mk = $('f-mk').value; touch(p); renderOutputs(); });
+    $('f-full').addEventListener('change', function () { var p = cur(); p.pl.full = $('f-full').checked; touch(p); renderOutputs(); });
+    $('f-fullSize').addEventListener('change', function () { var p = cur(); p.pl.fullSize = $('f-fullSize').value; touch(p); renderOutputs(); });
+    $('f-name').addEventListener('input', function () {
+      var p = cur(); p.name = $('f-name').value; touch(p); renderTabs(); renderOverview();
+    });
+    $('f-notes').addEventListener('input', function () { var p = cur(); p.notes = $('f-notes').value; touch(p); });
+    $('fx').addEventListener('input', function () { S.settings.fx = $('fx').value; touchSettings(); renderOutputs(); });
+
+    $('chips').innerHTML = TIERS.map(function (t) { return '<button class="chip" type="button" data-price="' + t[1] + '">' + t[0] + '</button>'; }).join('');
+    $('chips').addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('.chip') : null;
+      if (!b) return;
+      var p = cur(); p.sim.price = b.getAttribute('data-price'); $('f-price').value = p.sim.price; touch(p); renderOutputs();
+    });
+
+    $('tabs').addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('button') : null;
+      if (!b) return;
+      if (b.id === 'addProduct') {
+        var p = blankProduct('New product');
+        S.products.push(p); S.active = p.id; touch(p); renderTabs(); fillForm(p); renderOutputs();
+        $('f-name').focus(); $('f-name').select();
+        return;
+      }
+      if (b.getAttribute('data-id')) selectProduct(b.getAttribute('data-id'));
+    });
+    $('overviewBody').addEventListener('click', function (e) {
+      if (e.target.classList && e.target.classList.contains('lclpick')) return;
+      var tr = e.target.closest ? e.target.closest('tr') : null;
+      if (tr && tr.getAttribute('data-id')) selectProduct(tr.getAttribute('data-id'));
+    });
+    $('overviewBody').addEventListener('change', function (e) {
+      if (!e.target.classList || !e.target.classList.contains('lclpick')) return;
+      var id = e.target.getAttribute('data-id');
+      var p = S.products.filter(function (x) { return x.id === id; })[0];
+      if (!p) return;
+      p.sim.lcl = e.target.checked; touch(p); renderOutputs();
+    });
+    $('f-lcl').addEventListener('change', function () { S.settings.lcl.on = $('f-lcl').checked; touchSettings(); renderOutputs(); });
+    [['lcl-rate', 'rate'], ['lcl-min', 'min'], ['lcl-agent', 'agent']].forEach(function (x) {
+      $(x[0]).addEventListener('input', function () { S.settings.lcl[x[1]] = $(x[0]).value; touchSettings(); renderOutputs(); });
+    });
+    $('dup').addEventListener('click', function () {
+      var p = cur(); var c = normProduct(JSON.parse(JSON.stringify(p)));
+      c.id = 'p_' + uid(); c.name = (p.name || 'Product') + ' copy'; c.created = Date.now();
+      S.products.push(c); S.active = c.id; touch(c); renderTabs(); fillForm(c); renderOutputs();
+    });
+    var delTimer = null;
+    $('del').addEventListener('click', function () {
+      var b = $('del');
+      if (b.getAttribute('data-confirm') !== '1') {
+        b.setAttribute('data-confirm', '1'); b.textContent = 'Click again to delete';
+        clearTimeout(delTimer);
+        delTimer = setTimeout(function () { b.removeAttribute('data-confirm'); b.textContent = 'Delete'; }, 3500);
+        return;
+      }
+      clearTimeout(delTimer);
+      var p = cur();
+      S.products = S.products.filter(function (x) { return x.id !== p.id; });
+      clearTimeout(timers[p.id]); delete timers[p.id];
+      removeStored(p.id);
+      if (!S.products.length) { var nb = blankProduct('New product'); S.products.push(nb); touch(nb); }
+      b.removeAttribute('data-confirm'); b.textContent = 'Delete';
+      S.active = S.products[0].id;
+      renderTabs(); fillForm(cur()); renderOutputs();
+    });
+
+    /* links */
+    function normUrl(s) {
+      s = (s || '').trim();
+      if (!s) return null;
+      if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+      try { var u = new URL(s); return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null; } catch (e) { return null; }
+    }
+    function addLink() {
+      var u = normUrl($('f-link').value);
+      if (!u) return;
+      var p = cur(); p.links.push({ url: u }); $('f-link').value = ''; touch(p); renderLinks();
+    }
+    $('addLink').addEventListener('click', addLink);
+    $('f-link').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addLink(); } });
+    $('links').addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('.x') : null;
+      if (!b) return;
+      var p = cur(); p.links.splice(parseInt(b.getAttribute('data-i'), 10), 1); touch(p); renderLinks();
+    });
+
+    /* photos */
+    $('photos').addEventListener('click', function (e) {
+      var rm = e.target.closest ? e.target.closest('.x') : null;
+      var op = e.target.closest ? e.target.closest('.open') : null;
+      var p = cur();
+      if (rm) { p.photos.splice(parseInt(rm.getAttribute('data-i'), 10), 1); touch(p); renderPhotos(); return; }
+      if (op) {
+        var ph = p.photos[parseInt(op.getAttribute('data-i'), 10)];
+        $('lightbox').querySelector('img').src = photoSrc(ph);
+        $('lightbox').hidden = false;
+      }
+    });
+    $('lightbox').addEventListener('click', function () { $('lightbox').hidden = true; });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('lightbox').hidden = true; });
+    $('f-photo').addEventListener('change', function () { addPhotos(Array.prototype.slice.call($('f-photo').files)); $('f-photo').value = ''; });
+    var drop = $('drop');
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) {
+      var fl = e.dataTransfer ? Array.prototype.slice.call(e.dataTransfer.files) : [];
+      addPhotos(fl);
+    });
+    document.addEventListener('paste', function (e) {
+      var items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      var files = [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file' && items[i].type.indexOf('image/') === 0) { var f = items[i].getAsFile(); if (f) files.push(f); }
+      }
+      if (files.length) { e.preventDefault(); addPhotos(files); }
+    });
+
+    /* marketplace settings */
+    $('mkbody').addEventListener('input', function (e) {
+      var inp = e.target; var tr = inp.closest('tr'); if (!tr) return;
+      var m = S.settings.mk[parseInt(tr.getAttribute('data-i'), 10)]; if (!m) return;
+      var k = inp.getAttribute('data-k');
+      m[k] = inp.value;
+      if (k !== 'name' && (!m.verified || m.official)) {
+        m.verified = true; m.official = false; tr.querySelector('.vb').innerHTML = '<span class="badge">edited</span>';
+      }
+      touchSettings();
+      if (k === 'name') { var keep = $('f-mk').value; refreshMkSelect(); $('f-mk').value = keep; }
+      renderOutputs();
+    });
+    $('mkbody').addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-del]') : null;
+      if (!b || S.settings.mk.length <= 1) return;
+      var tr = b.closest('tr');
+      S.settings.mk.splice(parseInt(tr.getAttribute('data-i'), 10), 1);
+      touchSettings(); renderMkEditor(); refreshMkSelect(); renderOutputs();
+    });
+    $('mkAdd').addEventListener('click', function () {
+      S.settings.mk.push({ id: 'm_' + uid(), name: 'New marketplace', commission: 0, fixed: 0, ship: 0, verified: false });
+      touchSettings(); renderMkEditor(); refreshMkSelect(); renderOutputs();
+    });
+  }
+
+  /* ---------- photos ---------- */
+  var assetsNs;
+  function getAssets() {
+    if (assetsNs !== undefined) return Promise.resolve(assetsNs);
+    if (!window.claude || !window.claude.use) { assetsNs = null; return Promise.resolve(null); }
+    return window.claude.use('assets').then(function (a) { assetsNs = a || null; return assetsNs; }, function () { assetsNs = null; return null; });
+  }
+  function shrink(file, max, q) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var sc = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * sc)); c.height = Math.max(1, Math.round(img.height * sc));
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) { b ? resolve(b) : reject(new Error('encode')); }, 'image/jpeg', q);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('load')); };
+      img.src = url;
+    });
+  }
+  function blobToDataUrl(b) {
+    return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b); });
+  }
+  function addPhotos(files) {
+    var p = cur();
+    files = files.filter(function (f) { return f && f.type && f.type.indexOf('image/') === 0; });
+    if (!files.length) return;
+    $('photoMsg').textContent = 'Adding ' + files.length + (files.length > 1 ? ' photos...' : ' photo...');
+    var failed = 0;
+    files.reduce(function (pr, f) {
+      return pr.then(function () {
+        return getAssets().then(function (as) {
+          if (as) {
+            return shrink(f, 1400, 0.85).then(function (b) { return as.upload(b, { type: 'image/jpeg' }); })
+              .then(function (res) { p.photos.push({ id: res.id }); }, function () {
+                return shrink(f, 640, 0.6).then(blobToDataUrl).then(function (d) { p.photos.push({ data: d }); });
+              });
+          }
+          return shrink(f, 640, 0.6).then(blobToDataUrl).then(function (d) { p.photos.push({ data: d }); });
+        }).then(null, function () { failed++; });
+      });
+    }, Promise.resolve()).then(function () {
+      $('photoMsg').textContent = failed ? failed + ' file(s) could not be added.' : '';
+      touch(p);
+      if (cur() === p) renderPhotos();
+    });
+  }
+
+  /* ---------- start ---------- */
+  bindInputs();
+  /* Save pending edits right away when the page is hidden or closed, instead of waiting for the 0.6 s debounce. */
+  function flushPending() {
+    if (mode === 'local') {
+      if (Object.keys(timers).length || settingsTimer) {
+        Object.keys(timers).forEach(function (id) { clearTimeout(timers[id]); delete timers[id]; });
+        clearTimeout(settingsTimer); settingsTimer = null;
+        saveLocal();
+      }
+      return;
+    }
+    if (mode === 'db') {
+      Object.keys(timers).forEach(function (id) {
+        clearTimeout(timers[id]); delete timers[id];
+        var p = S.products.filter(function (x) { return x.id === id; })[0];
+        if (p) flush(p);
+      });
+      if (settingsTimer) { clearTimeout(settingsTimer); settingsTimer = null; flushSettings(); }
+    }
+  }
+  window.addEventListener('pagehide', flushPending);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flushPending(); });
+  setStatus('wait');
+  renderTabs(); fillSettingsForm(); renderMkEditor(); fillForm(cur()); renderOutputs();
+
+  (function init() {
+    var cl = window.claude;
+    if (!cl || !cl.use) { finishLocal(); return; }
+    Promise.all([
+      cl.use('db').then(function (x) { return x; }, function () { return null; }),
+      cl.use('user').then(function (x) { return x; }, function () { return null; })
+    ]).then(function (res) {
+      var db = res[0], user = res[1];
+      if (!db || !user) { finishLocal(); return null; }
+      return user.id().then(function (id) {
+        if (!id) { finishLocal(); return; }
+        dbCol = db.collection('data/users/' + id);
+        mode = 'db';
+        loadTimer = setTimeout(function () { if (!loaded) setStatus('wait'); }, 10000);
+        dbCol.onSnapshot(onSnap, function () { setStatus('unsaved'); });
+      });
+    }).then(null, function () { finishLocal(); });
+  })();
+  function finishLocal() {
+    mode = 'local';
+    if (loadLocal()) { renderTabs(); fillSettingsForm(); renderMkEditor(); fillForm(cur()); renderOutputs(); }
+    setStatus('local');
+  }
+})();
+</script>
+
+</body>
+</html>
