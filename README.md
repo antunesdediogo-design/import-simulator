@@ -11,6 +11,10 @@ A one-page tool to check whether a product imported from China to Chile is worth
 - **Marketplace P&L in CLP:** RRP, commission per marketplace (Mercado Libre, Falabella, Paris, Ripley, Sodimac, own store), shipping, returns, ad spend from a ROAS, break-even ROAS, RRP for a target margin, and the IVA paid to the SII per unit.
 - **Mercado Libre Full:** daily storage and old-stock charges, driven by how many days it takes to sell one unit.
 - **Notes per product:** comments, links and photos.
+- **Shipment board:** container summary per product (units, goods cost, freight, net cost, ROAS, gross and net profit, with % and a unit or total view) and a freight split by volume or by value.
+- **Cost build-up with duty options:** Form F, general 6% or a custom rate, and what changes if the certificate is missing.
+- **Ideas:** a block shared by André and Agustín for products still to investigate, with author, whether it exists in Chile, market price and saturation by number of listings.
+- **Last edit:** each product shows who changed it last and when.
 
 ## Where your data is saved
 

@@ -1,559 +1,244 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Landed cost, IVA, cash flow and marketplace P&L simulator for importing products from China to Chile.">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Import Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Archivo:wght@700;800&display=swap">
 <style>
-/* Layout: overview of all products, product tabs, then notes and inputs on the left with results on the right, and the marketplace P&L full width below. */
-:root {
-  --bg: #f4f6f3;
-  --surface: #ffffff;
-  --fg: #1a231e;
-  --muted: #5b6862;
-  --line: #dce2dd;
-  --accent: #0e6b56;
-  --accent-fg: #ffffff;
-  --accent-soft: #e3f1ec;
-  --warn: #9a5200;
-  --warn-bg: #fbf1e0;
-  --bad: #b3261e;
-  --s-goods: #0e6b56;
-  --s-freight: #3b78b8;
-  --s-duty: #b0832a;
-  --s-iva: #8760ad;
-  --s-agent: #8a948e;
-  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+:root{
+  --bg:#0E1116;--panel:#161A21;--panel2:#1D222B;--line:#2A303B;--text:#E8EBF0;--muted:#9BA4B3;
+  --accent:#5AA2FF;--accent-ink:#06121F;--good:#3DD68C;--bad:#FF8F6B;--warn:#F5C451;
+  --c1:#5AA2FF;--c2:#F5A35B;--c3:#3DD68C;--c4:#C58BFF;--c5:#FF7A9C;--c6:#4FD1D9;
+  --stripe:#1B2029;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f1512;
-    --surface: #172019;
-    --fg: #e5ece8;
-    --muted: #9aa9a1;
-    --line: #27332b;
-    --accent: #4cc2a1;
-    --accent-fg: #07120d;
-    --accent-soft: #15302a;
-    --warn: #e8b266;
-    --warn-bg: #2a2114;
-    --bad: #f0877f;
-    --s-goods: #4cc2a1;
-    --s-freight: #6fa5dd;
-    --s-duty: #d4a94f;
-    --s-iva: #b690d8;
-    --s-agent: #8a948e;
-    color-scheme: dark;
-  }
+:root[data-theme="light"]{
+  --bg:#F3F5F8;--panel:#FFFFFF;--panel2:#F6F8FB;--line:#DCE1E8;--text:#0F1620;--muted:#56606F;
+  --accent:#1D5FD1;--accent-ink:#FFFFFF;--good:#0E7C55;--bad:#B63F17;--warn:#8A6100;
+  --c1:#1D5FD1;--c2:#D9731F;--c3:#0E9A66;--c4:#8A4BD6;--c5:#D6336C;--c6:#0C8E98;
+  --stripe:#EEF1F5;
 }
-:root[data-theme="dark"] {
-  --bg: #0f1512;
-  --surface: #172019;
-  --fg: #e5ece8;
-  --muted: #9aa9a1;
-  --line: #27332b;
-  --accent: #4cc2a1;
-  --accent-fg: #07120d;
-  --accent-soft: #15302a;
-  --warn: #e8b266;
-  --warn-bg: #2a2114;
-  --bad: #f0877f;
-  --s-goods: #4cc2a1;
-  --s-freight: #6fa5dd;
-  --s-duty: #d4a94f;
-  --s-iva: #b690d8;
-  --s-agent: #8a948e;
-  color-scheme: dark;
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif}
+.mono,.num{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--accent)}
+.seg button[aria-checked="true"] .mut{color:inherit;opacity:.8}
+input,select,textarea{font:inherit;color:var(--text)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.top h1{margin:0;font:800 18px Archivo,sans-serif;letter-spacing:-.01em}
+.badge{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+.top .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:8px 12px;font-weight:600;font-size:13px;min-height:36px}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger:hover{border-color:var(--bad);color:var(--bad)}
+
+.app{display:grid;grid-template-columns:350px minmax(0,1fr);gap:0;min-height:calc(100vh - 62px)}
+aside{border-right:1px solid var(--line);background:var(--panel);padding:16px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 62px);overflow:auto;position:sticky;top:0;align-self:start}
+main{padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+
+h2.sec{margin:0;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.plist{display:flex;flex-direction:column;gap:6px}
+.pitem{display:flex;align-items:center;gap:8px;text-align:left;width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2)}
+.pitem[aria-current="true"]{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.pitem .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.pitem .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.pitem .pv{font-size:12px}
+.pos{color:var(--good)}.neg{color:var(--bad)}.mut{color:var(--muted)}
+
+details.grp{border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+details.grp>summary{list-style:none;cursor:pointer;padding:11px 12px;display:flex;align-items:center;gap:8px;font-weight:600;min-height:44px}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary .hint{margin-left:auto;font-weight:400;color:var(--muted);font-size:12px}
+details.grp>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-left:6px;margin-top:-3px}
+details.grp[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.fields{padding:2px 12px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fields .wide{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:500}
+label.f input,label.f select,label.f textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px;width:100%;font-size:14px}
+label.f textarea{min-height:80px;resize:vertical}
+label.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);min-height:40px}
+label.chk input{width:18px;height:18px;accent-color:var(--accent)}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:7px;padding:9px;font-weight:600;font-size:13px;color:var(--muted);min-height:38px}
+.seg button{white-space:nowrap}
+.seg button[aria-checked="true"]{background:var(--accent);color:var(--accent-ink)}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+[hidden]{display:none!important}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi .v{font-family:"JetBrains Mono",monospace;font-size:24px;font-weight:600;margin-top:2px;letter-spacing:-.02em}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
+.kpi.main{border-color:var(--accent)}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:11px 14px;font-weight:600;color:var(--muted);white-space:nowrap;min-height:44px}
+.tabs button[aria-selected="true"]{color:var(--text);border-color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h3{margin:0 0 10px;font:700 16px Archivo,sans-serif}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+
+.verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.verdict .big{font:800 44px Archivo,sans-serif;letter-spacing:-.02em}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid currentColor}
+.sug{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px;text-align:left}
+.sug .t{font-size:12px;font-weight:600;color:var(--accent)}
+.sug .h{font-weight:600;font-size:15px}
+.sug .d{font-size:13px;color:var(--muted)}
+
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:right;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+table.t th:first-child,table.t td:first-child{text-align:left}
+table.t td{padding:10px;border-bottom:1px solid var(--line);text-align:right}
+table.t tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+table.t tr.hl td{background:var(--panel2)}
+.tablewrap{overflow-x:auto}
+
+.wf{display:flex;flex-direction:column;gap:6px}
+.wfr{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) 110px;align-items:center;gap:12px;font-size:13px}
+.wfr .bar{height:20px;background:var(--stripe);border-radius:5px;position:relative;overflow:hidden}
+.wfr .bar i{position:absolute;top:0;bottom:0;border-radius:5px}
+.wfr .v{text-align:right}
+.wfr.sub .lab,.wfr.fin .lab{font-weight:700}
+.wfr.fin{border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+
+.stack{display:flex;height:34px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+.stack i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;margin-top:8px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+.cont{display:flex;height:96px;border-radius:12px;overflow:hidden;border:2px solid var(--text)}
+.cont .empty{flex:1;background:repeating-linear-gradient(135deg,var(--panel) 0 10px,var(--stripe) 10px 20px);display:flex;align-items:center;justify-content:center;color:var(--muted);font:700 17px Archivo,sans-serif;text-align:center;padding:0 8px}
+.pcard{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--panel);display:flex;flex-direction:column;gap:10px}
+.pcard.off{opacity:.8;border-style:dashed}
+.pcard .hd{display:flex;align-items:center;gap:8px}
+.pcard .hd h4{margin:0;font:700 15px Archivo,sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini div{background:var(--panel2);border-radius:9px;padding:9px 10px}
+.mini small{display:block;color:var(--muted);font-size:11px}
+.mini b{font-family:"JetBrains Mono",monospace;font-size:15px}
+.dark{background:#0A0C10;color:#F1F3F6;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:9px;border:1px solid var(--line)}
+:root[data-theme="light"] .dark{background:#10151D}
+.dark .r{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:#C9CFD8}
+.dark .r b{color:#fff;font-family:"JetBrains Mono",monospace;font-weight:500}
+.dark .r.t{border-top:1px solid #333B48;padding-top:10px;font-size:16px}
+.dark .r.t b{font-weight:700}
+
+.warn{border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:9px 12px;font-size:13px}
+
+.ideas{padding:20px;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.ideas .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.ideas .row>label.f{flex:1 1 200px}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.icard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.icard .hd{display:flex;gap:8px;align-items:flex-start}
+.icard h4{margin:0;font:700 16px Archivo,sans-serif;flex:1;min-width:0;overflow-wrap:anywhere}
+.chk3{display:flex;flex-direction:column;gap:8px}
+.chk3 .c{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start}
+.chk3 .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);margin-top:20px}
+.chk3 .dot.ok{background:var(--good);border-color:var(--good)}
+.meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px}
+.pill.warnc{color:var(--warn)}
+.menu{position:absolute;right:0;top:44px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:200px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.menu .btn{text-align:left;width:100%}
+.top .sp{position:relative}
+details.adv{border-top:1px dashed var(--line);padding-top:6px}
+details.adv>summary{cursor:pointer;color:var(--muted);font-size:12px;font-weight:600;padding:8px 0;list-style:none}
+details.adv>summary::-webkit-details-marker{display:none}
+details.adv>summary::before{content:"+ "}
+details.adv[open]>summary::before{content:"- "}
+.lnk{background:none;border:0;padding:0;font-weight:600;text-align:left;text-decoration:underline dotted;text-underline-offset:3px;color:var(--text)}
+.lnk:hover{color:var(--accent)}
+.dotc{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.badge[data-s="unsaved"],.badge[data-s="toobig"]{color:var(--bad);border-color:var(--bad)}
+.badge[data-s="saving"],.badge[data-s="wait"]{color:var(--warn)}
+.photos{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.ph{position:relative;display:inline-block}
+.phb{border:1px solid var(--line);border-radius:8px;padding:0;background:none;overflow:hidden;width:72px;height:72px}
+.phb img{width:100%;height:100%;object-fit:cover;display:block}
+.phx{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-size:15px;line-height:1;padding:0}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:70;padding:24px;cursor:zoom-out}
+#lightbox img{max-width:100%;max-height:100%;border-radius:6px}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+#modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:14px}
+#modal p{margin:0;font-size:15px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:60}
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  aside{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line)}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .wfr{grid-template-columns:minmax(110px,150px) minmax(0,1fr) 92px;gap:8px}
 }
-
-* { box-sizing: border-box; }
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.5;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 24px 48px;
+@media (max-width:520px){
+  main{padding:14px}
+  .kpi .v{font-size:19px}
+  .verdict .big{font-size:34px}
 }
-.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
-h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 4px; text-wrap: balance; letter-spacing: -0.01em; }
-h3 { font-size: 0.9rem; font-weight: 600; margin: 18px 0 8px; }
-.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-.top p { margin: 0; color: var(--muted); max-width: 62ch; }
-.topright { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-.fxfield { width: 140px; }
-.status { font-size: 0.78rem; color: var(--muted); padding-bottom: 9px; min-width: 9ch; }
-.status[data-s="unsaved"], .status[data-s="toobig"] { color: var(--bad); }
-.who { display: grid; gap: 6px; justify-items: start; max-width: 320px; }
-.who[hidden] { display: none; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.seg button { font: inherit; font-size: 0.88rem; background: var(--surface); color: var(--fg); border: 0; padding: 7px 14px; cursor: pointer; }
-.seg button + button { border-left: 1px solid var(--line); }
-.seg button[aria-checked="true"] { background: var(--accent); color: var(--accent-fg); }
-.seg button:disabled { color: var(--muted); cursor: not-allowed; }
-.who .hint { font-size: 0.75rem; }
-
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
-.panel h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 0 0 12px; }
-.field { display: grid; gap: 4px; min-width: 0; align-content: start; }
-.field label { font-size: 0.82rem; font-weight: 500; }
-.hint { font-size: 0.75rem; color: var(--muted); }
-.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-input[type="number"], input[type="text"], select, textarea {
-  width: 100%;
-  font: inherit;
-  font-size: 0.95rem;
-  color: var(--fg);
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 8px 10px;
-  min-width: 0;
-}
-input[type="number"] { font-family: var(--font-num); }
-textarea { resize: vertical; min-height: 84px; line-height: 1.45; }
-input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-button { font: inherit; }
-.btn { background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 0.85rem; }
-.btn:hover { border-color: var(--muted); }
-.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-.btn.danger[data-confirm="1"] { background: var(--bad); color: #fff; border-color: var(--bad); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { font-family: var(--font-num); font-size: 0.75rem; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
-.chip:hover { color: var(--fg); border-color: var(--muted); }
-.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-
-.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
-.tab { background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 0.88rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-.tab.add { border-style: dashed; color: var(--muted); }
-.phead { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 14px 18px; }
-.phead .field { flex: 1 1 260px; }
-.phead .acts { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.layout { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 18px; align-items: start; }
-@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
-.left, .results { display: grid; gap: 18px; min-width: 0; }
-.group { display: grid; gap: 12px; }
-.group + .group { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
-
-.linkadd { display: flex; gap: 8px; }
-.linklist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
-.linklist li { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.linklist a { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; font-size: 0.85rem; }
-.x { background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 2px 6px; border-radius: 4px; }
-.x:hover { color: var(--bad); }
-.drop { border: 1px dashed var(--line); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: var(--muted); display: grid; gap: 8px; }
-.drop.over { border-color: var(--accent); background: var(--accent-soft); }
-.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
-.ph { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); }
-.ph button.open { all: unset; cursor: zoom-in; display: block; width: 100%; height: 100%; }
-.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ph .x { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.55); color: #fff; }
-#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; cursor: zoom-out; }
-#lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; }
-#lightbox[hidden] { display: none; }
-
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
-.stat .k { font-size: 0.75rem; color: var(--muted); }
-.stat .v { font-family: var(--font-num); font-size: 1.3rem; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 2px; overflow-wrap: anywhere; }
-.stat.main { border-color: var(--accent); }
-.stat .sub { font-size: 0.75rem; color: var(--muted); font-family: var(--font-num); }
-
-.tablewrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
-td.n, th.n { text-align: right; font-family: var(--font-num); white-space: nowrap; }
-tr.total td { font-weight: 600; border-top: 2px solid var(--fg); border-bottom: 0; }
-tr.sub td { background: var(--bg); font-weight: 500; }
-tr.final td { background: var(--accent-soft); font-weight: 600; border-top: 2px solid var(--accent); }
-tr.credit td { color: var(--s-goods); }
-tr.neg td.n { color: var(--muted); }
-td .note { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 400; font-family: var(--font-body); }
-#overview tbody tr { cursor: pointer; }
-#overview tbody tr:hover td { background: var(--bg); }
-#overview tbody tr.active td { background: var(--accent-soft); }
-#overview .pname { all: unset; cursor: pointer; font-weight: 500; }
-.pos { color: var(--s-goods); }
-.neg { color: var(--bad); }
-
-.bar { display: flex; height: 22px; border-radius: 5px; overflow: hidden; background: var(--line); }
-.bar span { display: block; min-width: 0; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 0.8rem; }
-.legend li { display: flex; align-items: center; gap: 6px; }
-.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.legend b { font-family: var(--font-num); font-weight: 500; }
-
-.callout { background: var(--warn-bg); color: var(--fg); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; }
-.callout strong { color: var(--warn); }
-.plinputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
-.fullbox { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: grid; gap: 12px; }
-.fullbox p { margin: 0; }
-.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 500; font-size: 0.9rem; width: fit-content; }
-.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.switch .track { width: 38px; height: 22px; border-radius: 999px; background: var(--line); position: relative; transition: background 0.15s; flex: none; }
-.switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 0.15s; }
-.switch input:checked + .track { background: var(--accent); }
-.switch input:checked + .track::after { transform: translateX(16px); }
-.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
-.fullopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-.fullopts[hidden] { display: none; }
-.dims { display: flex; align-items: center; gap: 6px; }
-.dims input { min-width: 0; flex: 1; }
-.dims span { color: var(--muted); font-size: 0.85rem; }
-#overview input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-#overview tfoot td { font-weight: 600; border-top: 2px solid var(--fg); border-bottom: 0; background: var(--accent-soft); }
-.lclstats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.lclstats div { background: var(--bg); border-radius: 6px; padding: 8px 10px; min-width: 0; }
-.lclstats .k { font-size: 0.72rem; color: var(--muted); }
-.lclstats .v { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 1rem; font-weight: 500; overflow-wrap: anywhere; }
-.fill { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; margin: 10px 0 4px; }
-.fill span { display: block; height: 100%; background: var(--accent); }
-.sumlist { display: grid; gap: 6px; font-size: 0.9rem; margin-top: 14px; }
-.sumlist .line { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.sumlist .line span:last-child { font-family: var(--font-num); font-variant-numeric: tabular-nums; text-align: right; }
-.badge { display: inline-block; font-size: 0.68rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-family: var(--font-body); white-space: nowrap; }
-.badge.warn { color: var(--warn); border-color: var(--warn); }
-tr.sel td { background: var(--accent-soft); }
-details { margin-top: 16px; }
-summary { cursor: pointer; font-size: 0.85rem; font-weight: 500; }
-#mkbody input { padding: 6px 8px; font-size: 0.85rem; }
-#mkbody td { vertical-align: middle; }
-.foot { font-size: 0.78rem; color: var(--muted); max-width: 80ch; }
-.foot p { margin: 0 0 6px; }
 </style>
 </head>
 <body>
-
-
-<div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Import Simulator</h1>
-      <p>Landed cost, cash flow and a marketplace P&amp;L for each product you want to import from China to Chile, by air or sea. Add a product, paste its links and photos, enter quantity and FCA price.</p>
-    </div>
-    <div class="topright">
-      <div class="who" id="who" hidden>
-        <div class="seg" role="radiogroup" aria-label="Whose numbers">
-          <button type="button" role="radio" data-prof="andre" aria-checked="false">André</button>
-          <button type="button" role="radio" data-prof="agustin" aria-checked="false">Agustín</button>
-        </div>
-        <button class="btn" type="button" id="authBtn">Sign in with Google</button>
-        <span class="hint" id="authInfo"></span>
-      </div>
-      <div class="field fxfield">
-        <label for="fx">CLP per USD</label>
-        <input id="fx" type="number" min="0" step="1" value="950">
-      </div>
-      <span class="status" id="status" aria-live="polite"></span>
-    </div>
-  </header>
-
-  <section class="panel" aria-label="All products">
-    <h2>All products</h2>
-    <div class="fullbox">
-      <label class="switch" for="f-lcl">
-        <input type="checkbox" id="f-lcl" role="switch">
-        <span class="track" aria-hidden="true"></span>
-        <span class="switchlabel">Ship selected products together by sea (LCL)</span>
-      </label>
-      <div class="fullopts" id="lclOpts">
-        <div class="field">
-          <label for="lcl-rate">Price per m³, door to door (US$)</label>
-          <input id="lcl-rate" type="number" min="0" step="10">
-        </div>
-        <div class="field">
-          <label for="lcl-min">Minimum billed (m³)</label>
-          <input id="lcl-min" type="number" min="0" step="0.1">
-        </div>
-        <div class="field">
-          <label for="lcl-agent">Customs agent and local, whole shipment (US$)</label>
-          <input id="lcl-agent" type="number" min="0" step="10">
-          <span class="hint">0 when the door-to-door price already includes the customs agent, as your US$350 quote does</span>
-        </div>
-      </div>
-      <div id="lclSummary"></div>
-      <p class="hint" id="lclNote"></p>
-    </div>
-    <div class="tablewrap">
-      <table id="overview">
-        <thead><tr><th id="lclCol">In LCL</th><th>Product</th><th class="n">Qty</th><th class="n">Volume</th><th class="n">FCA</th><th class="n">Net cost/unit</th><th class="n">RRP</th><th>Marketplace</th><th class="n">Profit/unit</th><th class="n">Margin</th></tr></thead>
-        <tbody id="overviewBody"></tbody>
-        <tfoot id="overviewFoot"></tfoot>
-      </table>
-    </div>
-  </section>
-
-  <div class="tabs" id="tabs" role="tablist" aria-label="Products"></div>
-
-  <section class="panel phead" aria-label="Product">
-    <div class="field">
-      <label for="f-name">Product name</label>
-      <input id="f-name" type="text" placeholder="e.g. LW-A5Mini pump">
-    </div>
-    <div class="acts">
-      <button class="btn" type="button" id="dup">Duplicate</button>
-      <button class="btn danger" type="button" id="del">Delete</button>
-    </div>
-  </section>
-
-  <div class="layout">
-    <div class="left">
-      <section class="panel" aria-label="Reference">
-        <h2>Reference</h2>
-        <div class="group">
-          <div class="field">
-            <label for="f-notes">Comments</label>
-            <textarea id="f-notes" placeholder="Supplier, what they confirmed, questions to ask, next steps"></textarea>
-          </div>
-          <div class="field">
-            <label for="f-link">Links</label>
-            <div class="linkadd">
-              <input id="f-link" type="text" placeholder="Paste a link and press Enter" autocomplete="off">
-              <button class="btn" type="button" id="addLink">Add</button>
-            </div>
-            <ul class="linklist" id="links"></ul>
-          </div>
-          <div class="field">
-            <span class="field-label" style="font-size:0.82rem;font-weight:500">Photos</span>
-            <div class="drop" id="drop">
-              <span>Paste an image anywhere on this page, drop files here, or choose files.</span>
-              <input id="f-photo" type="file" accept="image/*" multiple aria-label="Choose photos">
-            </div>
-            <div class="photos" id="photos"></div>
-            <span class="hint" id="photoMsg"></span>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel" aria-label="Inputs">
-        <h2>Simulator inputs</h2>
-        <div class="group">
-          <div class="row2">
-            <div class="field">
-              <label for="f-qty">Quantity (units)</label>
-              <input id="f-qty" type="number" min="1" step="1">
-            </div>
-            <div class="field">
-              <label for="f-price">FCA unit price (USD)</label>
-              <input id="f-price" type="number" min="0" step="0.01">
-            </div>
-          </div>
-          <div class="field">
-            <span class="hint">Quick fill: price tiers</span>
-            <div class="chips" id="chips"></div>
-          </div>
-        </div>
-        <div class="group">
-          <div class="row2">
-            <div class="field">
-              <label for="f-kgu">Weight per unit (kg)</label>
-              <input id="f-kgu" type="number" min="0" step="0.01">
-              <span class="hint" id="wtotal"></span>
-            </div>
-            <div class="field">
-              <label for="f-rate">Air freight (USD/kg)</label>
-              <input id="f-rate" type="number" min="0" step="0.1">
-              <span class="hint">Quotes seen: 5 to 15</span>
-            </div>
-          </div>
-          <div class="field">
-            <span style="font-size:0.82rem;font-weight:500" id="cartonLbl">Carton size (cm)</span>
-            <div class="dims" role="group" aria-labelledby="cartonLbl">
-              <input id="f-cl" type="number" min="0" step="0.5" aria-label="Carton length in cm" placeholder="L">
-              <span aria-hidden="true">x</span>
-              <input id="f-cw" type="number" min="0" step="0.5" aria-label="Carton width in cm" placeholder="W">
-              <span aria-hidden="true">x</span>
-              <input id="f-ch" type="number" min="0" step="0.5" aria-label="Carton height in cm" placeholder="H">
-            </div>
-          </div>
-          <div class="row2">
-            <div class="field">
-              <label for="f-upc">Units per carton</label>
-              <input id="f-upc" type="number" min="1" step="1">
-            </div>
-            <div class="field">
-              <label for="f-vdiv">Volumetric divisor</label>
-              <select id="f-vdiv">
-                <option value="6000">6000, air cargo</option>
-                <option value="5000">5000, courier (DHL etc.)</option>
-              </select>
-            </div>
-          </div>
-          <span class="hint" id="volHint"></span>
-          <div class="row2">
-            <div class="field">
-              <label for="f-origin">Origin charges (USD)</label>
-              <input id="f-origin" type="number" min="0" step="1">
-              <span class="hint">Pickup, export clearance</span>
-            </div>
-            <div class="field">
-              <label for="f-insp">Insurance (% of goods)</label>
-              <input id="f-insp" type="number" min="0" step="0.1">
-            </div>
-          </div>
-        </div>
-        <div class="group">
-          <div class="field">
-            <label for="f-duty">Customs duty</label>
-            <select id="f-duty">
-              <option value="0">0% with Form F (Chile-China FTA)</option>
-              <option value="6">6% general rate</option>
-            </select>
-            <span class="hint">IVA is 19% on CIF plus duty</span>
-          </div>
-          <div class="row2">
-            <div class="field">
-              <label for="f-agent">Agent and local costs (USD)</label>
-              <input id="f-agent" type="number" min="0" step="10">
-              <span class="hint">Estimate, get a quote</span>
-            </div>
-            <div class="field">
-              <label for="f-dep">Supplier deposit (%)</label>
-              <input id="f-dep" type="number" min="0" max="100" step="5">
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <div class="results">
-      <div class="stats" aria-live="polite">
-        <div class="stat"><div class="k">Total cash out</div><div class="v" id="s-total">-</div><div class="sub" id="s-total-clp"></div></div>
-        <div class="stat main"><div class="k">Net cost after IVA credit</div><div class="v" id="s-net">-</div><div class="sub" id="s-net-clp"></div></div>
-        <div class="stat"><div class="k">Net cost per unit</div><div class="v" id="s-unit">-</div><div class="sub" id="s-unit-clp"></div></div>
-        <div class="stat"><div class="k">Per unit incl. IVA</div><div class="v" id="s-unit-iva">-</div></div>
-      </div>
-
-      <section class="panel">
-        <h2>Cost build-up (USD)</h2>
-        <div class="tablewrap">
-          <table>
-            <thead><tr><th>Item</th><th class="n">Amount</th></tr></thead>
-            <tbody id="build"></tbody>
-          </table>
-        </div>
-        <div style="margin-top:16px">
-          <div class="bar" id="bar" role="img" aria-label="Share of each cost in the total cash out"></div>
-          <ul class="legend" id="legend"></ul>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Cash flow timeline (USD)</h2>
-        <div class="tablewrap">
-          <table>
-            <thead><tr><th>When</th><th class="n">Cash</th><th class="n">Running net</th></tr></thead>
-            <tbody id="flow"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <div class="callout" id="agentnote"></div>
-
-      <div class="foot">
-        <p>Assumptions to confirm: air freight and insurance are estimates; the 0% duty needs the preferential certificate (Form F) from the supplier and a tariff code that qualifies; the agent fee is a placeholder; the deposit split is typical, not agreed.</p>
-        <p>The IVA paid at customs becomes a tax credit (crédito fiscal) for a company with registered activity. It reduces the IVA you owe on sales in the F29 filed the following month and is not paid back in cash. Check the details with your accountant.</p>
-      </div>
-    </div>
+<div class="top">
+  <h1>Import Simulator</h1>
+  <span class="badge" id="status" data-s="local" role="status">Saved in this browser</span>
+  <div class="seg" id="viewSw" role="radiogroup" aria-label="Section" style="min-width:250px">
+    <button type="button" role="radio" data-view="sim">Simulator</button>
+    <button type="button" role="radio" data-view="ideas">Ideas <span id="ideaCount" class="mut"></span></button>
   </div>
-
-  <section class="panel" aria-label="Marketplace P and L">
-    <h2>Marketplace P&amp;L (CLP)</h2>
-    <div class="plinputs">
-      <div class="field">
-        <label for="f-rrp">RRP, IVA included (CLP)</label>
-        <input id="f-rrp" type="number" min="0" step="100">
-      </div>
-      <div class="field">
-        <label for="f-mk">Marketplace</label>
-        <select id="f-mk"></select>
-      </div>
-      <div class="field">
-        <label for="f-roas">ROAS (x)</label>
-        <input id="f-roas" type="number" min="0" step="0.1">
-        <span class="hint">Sales per 1 of ad spend. 0 means no ads.</span>
-      </div>
-      <div class="field">
-        <label for="f-returns">Returns and losses (%)</label>
-        <input id="f-returns" type="number" min="0" step="0.5">
-        <span class="hint">Of net revenue</span>
-      </div>
-      <div class="field">
-        <label for="f-target">Target margin (%)</label>
-        <input id="f-target" type="number" min="0" step="1">
-        <span class="hint">Of net revenue, after ads</span>
-      </div>
-      <div class="field">
-        <label for="f-days">Days to sell one unit</label>
-        <input id="f-days" type="number" min="0" step="0.1">
-        <span class="hint">Average for the whole order, e.g. 0.9 is about 33 a month</span>
-      </div>
+  <div class="sp">
+    <button class="btn" id="btnMenu" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu">Menu ⋯</button>
+    <div class="menu" id="menu" hidden>
+      <button class="btn pri" id="btnAuth" type="button" hidden>Sign in with Google</button>
+      <button class="btn" id="btnTheme" type="button">Light / dark</button>
+      <button class="btn" id="btnExport" type="button">Export data</button>
+      <button class="btn" id="btnImport" type="button">Import data</button>
+      <button class="btn danger" id="btnReset" type="button">Reset to baseline</button>
     </div>
-    <div class="fullbox">
-      <label class="switch" for="f-full">
-        <input type="checkbox" id="f-full" role="switch">
-        <span class="track" aria-hidden="true"></span>
-        <span class="switchlabel">Ship with Mercado Libre Full</span>
-      </label>
-      <div class="fullopts" id="fullOpts">
-        <div class="field">
-          <label for="f-fullSize">Full size category</label>
-          <select id="f-fullSize">
-            <option value="S">Small, up to 12 x 15 x 25 cm ($0,83 per day)</option>
-            <option value="M">Medium, up to 28 x 36 x 51 cm ($2,33 per day)</option>
-            <option value="L">Large, up to 60 x 60 x 70 cm ($10,33 per day)</option>
-            <option value="XL">Extra large ($19,33 per day)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="f-fullIn">Sending stock to Full, total (CLP)</label>
-          <input id="f-fullIn" type="number" min="0" step="1000">
-          <span class="hint">0 if you drop it off yourself. Home pickup is priced by volume and distance</span>
-        </div>
-      </div>
-      <p class="hint" id="fullNote"></p>
-    </div>
-    <div class="callout" id="plnote"><strong>Example inputs.</strong> The RRP, ROAS and returns are placeholders to replace with your own numbers. Commissions come from each marketplace's seller fee table for bike pump categories (details under Edit marketplace fees). Commission is applied to the RRP with IVA included (confirmed in Mercado Libre's seller simulator). Fees are shown net of IVA: the IVA marketplaces bill on top is recovered as tax credit by a company, and shows up only in the IVA line below. Logistics fees outside Mercado Libre are not included unless you enter them.</div>
-    <div class="tablewrap" style="margin-top:14px">
-      <table>
-        <thead><tr><th>Line</th><th class="n">Per unit</th><th class="n">% of RRP</th><th class="n" id="plTotHead">Total</th></tr></thead>
-        <tbody id="pl"></tbody>
-      </table>
-    </div>
-    <div class="sumlist" id="plsum"></div>
-
-    <h3>Same product on each marketplace</h3>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Marketplace</th><th class="n">Commission</th><th class="n">Profit/unit</th><th class="n">Margin</th></tr></thead>
-        <tbody id="cmp"></tbody>
-      </table>
-    </div>
-
-    <details id="mkset">
-      <summary>Edit marketplace fees</summary>
-      <p class="hint">Applies to all products. Rates are for the bike pump category and were read from each marketplace's own seller fee pages on 4 Nov 2026 (Sodimac and Own web store excepted, see the notes). Each marketplace can change its table and rates differ by category, so for another product type check the category rate and edit it here. Editing a number removes the "official table" tag.</p>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>Name</th><th class="n">Commission %</th><th class="n">Fixed fee (CLP)</th><th class="n">Fixed fee up to price (0 = always)</th><th class="n">Shipping you pay (CLP)</th><th class="n">Shipping from price (CLP)</th><th>Status</th><th></th></tr></thead>
-          <tbody id="mkbody"></tbody>
-        </table>
-      </div>
-      <div style="margin-top:10px"><button class="btn" type="button" id="mkAdd">Add marketplace</button></div>
-    </details>
-  </section>
+    <input type="file" id="fileIn" accept="application/json" hidden>
+  </div>
 </div>
 
+<div class="app" id="appSim">
+  <aside aria-label="Products and inputs">
+    <div id="who" hidden>
+      <h2 class="sec">Numbers of</h2>
+      <div class="seg" role="radiogroup" aria-label="Whose numbers" style="margin-top:8px"><button type="button" role="radio" data-prof="andre">André</button><button type="button" role="radio" data-prof="agustin">Agustín</button></div>
+      <p class="note" id="authInfo" style="margin:8px 0 0"></p>
+    </div>
+    <div>
+      <h2 class="sec">Products</h2>
+      <div class="plist" id="plist" style="margin-top:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn pri" id="btnAdd" type="button">+ Add product</button>
+        <button class="btn" id="btnDup" type="button">Duplicate</button>
+        <button class="btn danger" id="btnDel" type="button">Delete</button>
+      </div>
+    </div>
+    <div id="form"></div>
+  </aside>
+
+  <main>
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalText"><div class="box"><p id="modalText"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" id="modalNo">Cancel</button><button type="button" class="btn pri" id="modalYes">OK</button></div></div></div>
+<div id="toast" hidden role="status"></div>
 <div id="lightbox" hidden><img alt="Reference photo, enlarged"></div>
+
+<section class="ideas" id="appIdeas" hidden aria-label="Ideas to investigate"></section>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -573,7 +258,7 @@ window.FIREBASE_CONFIG = {
 (function () {
   'use strict';
 
-  /*CALC-START*/
+  /* ===== calculation core, copied unchanged from the live simulator ===== */
   var IVA = 0.19;
   function n(v) { v = parseFloat(v); return isFinite(v) && v >= 0 ? v : 0; }
 
@@ -581,7 +266,6 @@ window.FIREBASE_CONFIG = {
     var qty = Math.max(0, Math.round(n(s.qty)));
     var goods = qty * n(s.price);
     var weight = qty * n(s.kgu);
-    /* Volume: cartons of upc units, each L x W x H cm. Volumetric weight = carton cm3 / divisor (6000 air cargo, 5000 courier). */
     var cartonCm3 = n(s.cl) * n(s.cw) * n(s.ch);
     var upc = Math.max(1, Math.round(n(s.upc)) || 1);
     var cartons = cartonCm3 > 0 ? Math.ceil(qty / upc) : 0;
@@ -612,8 +296,6 @@ window.FIREBASE_CONFIG = {
     };
   }
 
-  /* Combined LCL shipment: freight = rate x max(total m3, minimum m3), split by each product's volume;
-     the one customs agent and local cost is split by goods value. Returns { id: {freight, agent, cbm} }. */
   function lclAlloc(products, cfg) {
     var out = {};
     if (!cfg || !cfg.on) return { map: out, totalCbm: 0, billed: 0, cost: 0, goods: 0, ids: [] };
@@ -624,8 +306,9 @@ window.FIREBASE_CONFIG = {
     var billed = sel.length ? Math.max(totalCbm, n(cfg.min)) : 0;
     var cost = billed * n(cfg.rate);
     base.forEach(function (b) {
+      var share = cfg.split === 'value' ? (goods > 0 ? b.r.goods / goods : 0) : (totalCbm > 0 ? b.r.cbm / totalCbm : 0);
       out[b.id] = {
-        freight: totalCbm > 0 ? cost * b.r.cbm / totalCbm : 0,
+        freight: cost * share,
         agent: goods > 0 ? n(cfg.agent) * b.r.goods / goods : 0,
         cbm: b.r.cbm, totalCbm: totalCbm, billed: billed
       };
@@ -633,8 +316,6 @@ window.FIREBASE_CONFIG = {
     return { map: out, totalCbm: totalCbm, billed: billed, cost: cost, goods: goods, ids: sel.map(function (p) { return p.id; }) };
   }
 
-  /* Mercado Libre Full, official ML Chile tariffs (ayuda 24253 and 15373, read 10 Nov 2026).
-     day = storage per unit per day; a, b, c = old-stock charge per unit per month at 4-6, 6-12 and 12+ months. */
   var FULL = {
     S: { day: 0.83, a: 140, b: 1450, c: 3000 },
     M: { day: 2.33, a: 235, b: 2200, c: 3700 },
@@ -642,7 +323,6 @@ window.FIREBASE_CONFIG = {
     XL: { day: 19.33, a: 825, b: 7500, c: 12500 }
   };
   function isMercadoLibre(mk) { return mk && (mk.id === 'ml' || mk.id === 'mlp' || /mercado ?libre/i.test(mk.name || '')); }
-  /* The whole order arrives at once and one unit sells every d days: unit i stays i*d days. */
   function fullCost(Q, d, size) {
     var t = FULL[size] || FULL.S;
     if (Q <= 0 || d <= 0) return { store: 0, old: 0, avgDays: 0 };
@@ -699,749 +379,733 @@ window.FIREBASE_CONFIG = {
       margin: margin, beRoas: beRoas, tRrp: tRrp, absorb: absorb, roas: roas
     };
   }
-  /*CALC-END*/
+  /* ===== end calculation core ===== */
 
   var $ = function (id) { return document.getElementById(id); };
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+  var modalFn = null, toastT = null;
+  function ask(text, okLabel, fn) {
+    $('modalText').textContent = text; $('modalYes').textContent = okLabel || 'OK'; modalFn = fn; $('modal').hidden = false; $('modalYes').focus();
   }
+  function closeModal() { $('modal').hidden = true; modalFn = null; }
+  function toast(t) { var el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, 2800); }
+  document.addEventListener('DOMContentLoaded', function () {});
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function grp(x) { return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-  function usd(v) {
-    var neg = v < 0, a = Math.abs(v);
-    var s = 'US$' + a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return neg ? '-' + s : s;
-  }
+  function usd(v) { var neg = v < 0, a = Math.abs(v); var s = 'US$' + a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return neg ? '-' + s : s; }
   function clp(v) { var neg = Math.round(v) < 0; return (neg ? '-$' : '$') + grp(Math.abs(v)); }
+  function pct(v) { return (v * 100).toFixed(1) + '%'; }
+  function m3(v) { return v.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' m³'; }
   function uid() { return Math.random().toString(36).slice(2, 8) + Date.now().toString(36); }
+  var COLORS = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)'];
 
-  /* ---------- state ---------- */
-  var SIMF = ['qty', 'price', 'kgu', 'rate', 'origin', 'insp', 'duty', 'agent', 'dep', 'cl', 'cw', 'ch', 'upc', 'vdiv'];
-  var PLF = ['rrp', 'roas', 'returns', 'target', 'days', 'fullIn'];
-  var DEFAULT_SIM = { qty: '100', price: '0', kgu: '0.2', rate: '10', origin: '0', insp: '1', duty: '0', agent: '150', dep: '30',
-    cl: '0', cw: '0', ch: '0', upc: '100', vdiv: '6000', lcl: false };
+  /* ===== state ===== */
+  var DEFAULT_SIM = { qty: '100', price: '0', kgu: '0.2', rate: '10', origin: '0', insp: '1', duty: '0', agent: '150', dep: '30', cl: '0', cw: '0', ch: '0', upc: '100', vdiv: '6000', lcl: false, dutyMode: 'formF', dutyFF: '0', dutyGen: '6', dutyCustom: '', hs: '' };
   var DEFAULT_PL = { rrp: '0', mk: 'ml', roas: '4', returns: '3', target: '20', days: '1', full: false, fullSize: 'S', fullIn: '0' };
-  var TIERS = [['$28 sample', 28], ['$27 (500+)', 27], ['$25 (1,000+)', 25], ['$22 (5,000+)', 22], ['$20 (10,000+)', 20]];
 
-  var MK_VERSION = 3;
   function defaultMk() {
     return [
-      { id: 'ml', name: 'Mercado Libre Clásica', commission: 12, fixed: 0, ship: 3050, shipMin: 19990, verified: true, official: true,
-        note: 'ML Chile fee search, Ciclismo > Accesorios > Bombines y Compresores > Compresores de Aire: Clásica 12% (the "Otros" and "Bombines de Mano" categories are 14%). Your seller simulator confirmed the % is taken on the full price with IVA. Free shipping is mandatory from $19.990: ML table shows $3.050 for up to 0.3 kg (green or no reputation; the 50% discount label is unclear). Checked 4 Nov 2026.' },
-      { id: 'mlp', name: 'Mercado Libre Premium', commission: 16, fixed: 0, ship: 3050, shipMin: 19990, verified: true, official: true,
-        note: 'Same category: Premium 16% (18% in "Otros"), 12 installments without interest. Same shipping as Clásica. Checked 4 Nov 2026.' },
-      { id: 'fala', name: 'Falabella.com', commission: 15, fixed: 0, ship: 0, verified: true, official: true,
-        note: 'Falabella seller commission table dated 20 Jul 2026: Deportes > Bicicletas y accesorios de ciclismo > Accesorios/repuestos para bicicletas 15%. Logistics co-financing fees are separate and not included.' },
-      { id: 'paris', name: 'Paris.cl', commission: 15, fixed: 0, ship: 0, verified: true, official: true,
-        note: 'Paris marketplace commission table (undated): Fitness > Bicicleta 15%. Assumes the Bicicleta family covers pumps. Logistics costs are separate and not included.' },
-      { id: 'ripley', name: 'Ripley.cl', commission: 18, fixed: 990, fixedMax: 5000, ship: 0, verified: true, official: true,
-        note: 'Ripley commission table: Ciclismo > Accesorios > Bombines y Compresores 18% (bicycles themselves 15%). $990 fixed fee per unit only when the price is $5.000 or less. Logistics costs are separate and not included.' },
-      { id: 'sodimac', name: 'Sodimac.cl', commission: 15, fixed: 0, ship: 0, verified: false, official: false,
-        note: 'No public commission table found. "Vende en Sodimac" leads to the Falabella seller program, so 15% is a placeholder borrowed from Falabella. Ask the seller program for the Sodimac rate.' },
-      { id: 'web', name: 'Own web store', commission: 0, fixed: 0, ship: 0, verified: false, official: false,
-        note: 'No marketplace commission. Add your payment gateway fee here if you want it in the P&L.' },
+      { id: 'ml', name: 'Mercado Libre Clásica', commission: 12, fixed: 0, ship: 3050, shipMin: 19990, verified: true, official: true, note: 'Official ML Chile fee search, checked 4 Nov 2026. Free shipping mandatory from $19.990 ($3.050 for up to 0.3 kg).' },
+      { id: 'mlp', name: 'Mercado Libre Premium', commission: 16, fixed: 0, ship: 3050, shipMin: 19990, verified: true, official: true, note: 'Same category, Premium 16%. Same shipping.' },
+      { id: 'fala', name: 'Falabella.com', commission: 15, fixed: 0, ship: 0, verified: true, official: true, note: 'Falabella table 20 Jul 2026. Logistics fees not included.' },
+      { id: 'paris', name: 'Paris.cl', commission: 15, fixed: 0, ship: 0, verified: true, official: true, note: 'Paris table (undated), Fitness > Bicicleta 15%. Logistics not included.' },
+      { id: 'ripley', name: 'Ripley.cl', commission: 18, fixed: 990, fixedMax: 5000, ship: 0, verified: true, official: true, note: 'Ripley table, Bombines y Compresores 18%. $990 fixed fee only at $5.000 or less. Logistics not included.' },
+      { id: 'sodimac', name: 'Sodimac.cl', commission: 15, fixed: 0, ship: 0, verified: false, official: false, note: 'No public table found. 15% is a placeholder borrowed from Falabella.' },
+      { id: 'web', name: 'Own web store', commission: 0, fixed: 0, ship: 0, verified: false, official: false, note: 'Add your payment gateway fee if you want it in the P&L.' },
       { id: 'direct', name: 'Direct sale', commission: 0, fixed: 0, ship: 0, verified: true, official: false, note: '' }
     ];
   }
   function blankProduct(name) {
-    return {
-      id: 'p_' + uid(), name: name || 'New product', created: Date.now(), notes: '', links: [], photos: [],
-      sim: Object.assign({}, DEFAULT_SIM), pl: Object.assign({}, DEFAULT_PL)
-    };
+    return { id: 'p_' + uid(), name: name || 'New product', created: Date.now(), notes: '', links: [], photos: [], sim: Object.assign({}, DEFAULT_SIM), pl: Object.assign({}, DEFAULT_PL) };
   }
   function seedProduct() {
     var p = blankProduct('LW-A5Mini mini pump');
     p.id = 'p_seed';
     p.created = 1;
-    p.notes = 'Supplier: Langwei Technology (Ningbo) Co., Ltd., listed on Alibaba as a multispecialty supplier, so factory status is not confirmed.\nBefore any deposit: written confirmation of Form F (Chile-China FTA certificate), invoice issued by the Chinese company, UN3481 classification, UN38.3 report and MSDS for the battery.';
     p.links = [{ url: 'https://www.alibaba.com/product-detail/100PSI-Lightweight-Wireless-Rechargeable-Bicycle-Tire_1601941323078.html' }];
-    /* André's baseline, 10 Nov 2026: 30 units at US$21, 15 x 12 x 5 cm box per unit, by sea (LCL). */
-    p.sim.qty = '30';
-    p.sim.price = '21';
-    p.sim.cl = '15'; p.sim.cw = '12'; p.sim.ch = '5'; p.sim.upc = '1';
-    p.sim.lcl = true;
-    p.pl.rrp = '49990';
-    p.pl.roas = '12';
+    p.notes = 'Supplier: Langwei Technology (Ningbo). Before any deposit: written confirmation of Form F, invoice from the Chinese company, UN3481 classification, UN38.3 report and MSDS for the battery.';
+    p.sim.qty = '30'; p.sim.price = '21'; p.sim.cl = '15'; p.sim.cw = '12'; p.sim.ch = '5'; p.sim.upc = '1'; p.sim.lcl = true;
+    p.pl.rrp = '49990'; p.pl.roas = '12';
     return p;
   }
+  function baseline() {
+    return { products: [seedProduct()], active: 'p_seed', tab: 'overview', view: 'sim', me: 'André', ideas: [],
+      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk() } };
+  }
+  function syncDuty(sim) { sim.duty = sim.dutyMode === 'general' ? sim.dutyGen : sim.dutyMode === 'custom' ? sim.dutyCustom : sim.dutyFF; }
   function normProduct(p) {
     p = p || {};
+    var sim = Object.assign({}, DEFAULT_SIM, p.sim || {});
+    if (p.sim && p.sim.dutyMode === undefined) {
+      if (n(p.sim.duty) > 0) { sim.dutyMode = 'custom'; sim.dutyCustom = String(p.sim.duty); } else { sim.dutyMode = 'formF'; }
+    }
+    syncDuty(sim);
+    var out = { id: p.id || ('p_' + uid()), name: p.name || 'Untitled', created: p.created || Date.now(), notes: p.notes || '',
+      links: Array.isArray(p.links) ? p.links : [], photos: Array.isArray(p.photos) ? p.photos : [],
+      sim: sim, pl: Object.assign({}, DEFAULT_PL, p.pl || {}) };
+    if (p.updatedBy) { out.updatedBy = p.updatedBy; out.updatedAt = p.updatedAt || 0; }
+    return out;
+  }
+  function normSettings(st) {
+    st = st || {};
     return {
-      id: p.id || ('p_' + uid()), name: p.name || 'Untitled', created: p.created || Date.now(),
-      notes: p.notes || '', links: Array.isArray(p.links) ? p.links : [], photos: Array.isArray(p.photos) ? p.photos : [],
-      sim: Object.assign({}, DEFAULT_SIM, p.sim || {}), pl: Object.assign({}, DEFAULT_PL, p.pl || {})
+      fx: st.fx !== undefined && st.fx !== '' ? st.fx : '1000',
+      lcl: Object.assign({ rate: '350', min: '1', agent: '0', split: 'space' }, st.lcl || {}),
+      sat: Object.assign({ low: '50', high: '300' }, st.sat || {}),
+      mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk()
     };
   }
-  function normSettings(s) {
-    s = s || {};
-    var mk = Array.isArray(s.mk) && s.mk.length ? s.mk : defaultMk();
-    if (s.v !== MK_VERSION) {
-      /* Upgrade older saved fees: replace untouched placeholders with the sourced ones, keep anything the user edited, add new marketplaces. */
-      var defs = defaultMk();
-      var byId = {};
-      mk.forEach(function (m) { byId[m.id] = m; });
-      var merged = defs.map(function (d) {
-        var old = byId[d.id];
-        return old && old.verified && !old.official && d.id !== 'direct' ? old : d;
-      });
-      mk.forEach(function (m) { if (!defs.some(function (d) { return d.id === m.id; })) merged.push(m); });
-      mk = merged;
-    }
-    var lcl = Object.assign({ on: true, rate: '350', min: '1', agent: '0' }, s.lcl || {});
-    /* The US$350 door-to-door quote includes the customs agent (user, 10 Nov 2026): reset the old 150 default once. */
-    if (lcl.v !== 2) { if (String(lcl.agent) === '150') lcl.agent = '0'; lcl.v = 2; }
-    return { v: MK_VERSION, fx: s.fx !== undefined && s.fx !== '' ? s.fx : 1000, mk: mk, lcl: lcl };
+  function normIdea(i) {
+    return Object.assign({ id: 'i_' + uid(), name: 'Untitled', link: '', notes: '', author: 'André', created: Date.now(), updated: Date.now(), editedBy: '', status: 'idea', exists: 'unknown', price: '', listings: '' }, i || {});
   }
+  function normState(s) {
+    var b = baseline();
+    if (!s || !Array.isArray(s.products) || !s.products.length) return b;
+    return {
+      products: s.products.map(normProduct),
+      active: s.active || s.products[0].id,
+      tab: s.tab || 'overview',
+      view: s.view === 'ideas' ? 'ideas' : 'sim',
+      sumView: s.sumView === 'total' ? 'total' : 'unit',
+      me: s.me === 'Agustín' ? 'Agustín' : 'André',
+      ideas: Array.isArray(s.ideas) ? s.ideas.map(normIdea) : [],
+      settings: normSettings(s.settings)
+    };
+  }
+  /* Local storage: data (products, settings, ideas) and screen choices (tab, view) are kept apart,
+     so that in shared mode the shared data never lands in this browser's local copy. */
+  var KEY = 'importsim.v2.local', UIKEY = 'importsim.v2.ui';
+  var mode = 'local'; /* 'local' or 'shared' (Firebase) */
+  function readJSON(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  function load() { var d = readJSON(KEY), u = readJSON(UIKEY); return normState(d ? Object.assign({}, d, u || {}) : null); }
+  function saveUI() { try { localStorage.setItem(UIKEY, JSON.stringify({ active: S.active, tab: S.tab, view: S.view, sumView: S.sumView })); } catch (e) {} }
+  function saveLocalData() {
+    try { localStorage.setItem(KEY, JSON.stringify({ products: S.products, settings: S.settings, ideas: S.ideas, me: S.me })); setStatus('local'); }
+    catch (e) { setStatus('unsaved'); }
+  }
+  function save() { saveUI(); if (mode === 'shared') scheduleSync(); else saveLocalData(); }
+  function setStatus(st) {
+    var m = { saved: mode === 'shared' ? 'Saved, shared' : 'Saved', saving: 'Saving...', local: 'Saved in this browser', unsaved: 'Not saved', wait: 'Connecting...', toobig: 'Not saved: too many photos' };
+    var el = $('status'); if (!el) return;
+    el.textContent = m[st] || ''; el.setAttribute('data-s', st);
+  }
+  var S = load();
 
-  var S = { products: [seedProduct()], settings: normSettings(), active: 'p_seed' };
-  function cur() {
-    for (var i = 0; i < S.products.length; i++) if (S.products[i].id === S.active) return S.products[i];
-    return S.products[0] || null;
-  }
-  function mkById(id) {
-    var l = S.settings.mk;
-    for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
-    return l[0] || { id: 'x', name: 'None', commission: 0, fixed: 0, ship: 0, verified: true };
-  }
+  function cur() { for (var i = 0; i < S.products.length; i++) if (S.products[i].id === S.active) return S.products[i]; return S.products[0]; }
+  function mkById(id) { for (var i = 0; i < S.settings.mk.length; i++) if (S.settings.mk[i].id === id) return S.settings.mk[i]; return S.settings.mk[0]; }
+  function lclCfg() { return { on: true, rate: S.settings.lcl.rate, min: S.settings.lcl.min, agent: S.settings.lcl.agent, split: S.settings.lcl.split }; }
 
-  /* ---------- persistence ---------- */
-  var mode = 'pending';
-  var dbCol = null;
-  var loaded = false;
-  var lastWritten = {};
-  var timers = {};
-  var chain = {};
-  var settingsTimer = null;
-
-  function canon(o) {
-    if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
-    if (o && typeof o === 'object') {
-      return '{' + Object.keys(o).sort().map(function (k) { return JSON.stringify(k) + ':' + canon(o[k]); }).join(',') + '}';
-    }
-    return JSON.stringify(o);
-  }
-  var shared = false; /* true while editing a shared André / Agustín profile in Firebase */
-  function setStatus(s) {
-    var m = { saved: shared ? 'Saved, shared' : 'Saved', saving: 'Saving...', local: 'Saved in this browser', unsaved: 'Not saved',
-      wait: 'Connecting...', toobig: 'Not saved: too many photos, remove some' };
-    var el = $('status');
-    el.textContent = m[s] || '';
-    el.setAttribute('data-s', s);
-  }
-  function saveLocal() {
-    try {
-      localStorage.setItem('importsim.v2', JSON.stringify({ products: S.products, settings: S.settings, active: S.active }));
-      setStatus('local');
-    } catch (e) { setStatus('unsaved'); }
-  }
-  function loadLocal() {
-    try {
-      var raw = localStorage.getItem('importsim.v2');
-      if (!raw) return false;
-      var d = JSON.parse(raw);
-      if (d && Array.isArray(d.products) && d.products.length) {
-        S.products = d.products.map(normProduct);
-        S.settings = normSettings(d.settings);
-        S.active = d.active && S.products.some(function (p) { return p.id === d.active; }) ? d.active : S.products[0].id;
-        return true;
-      }
-    } catch (e) { }
-    return false;
-  }
-  function touch(p) {
-    setStatus('saving');
-    clearTimeout(timers[p.id]);
-    timers[p.id] = setTimeout(function () { delete timers[p.id]; flush(p); }, 600);
-  }
-  function flush(p) {
-    if (mode === 'pending') { touch(p); return; }
-    if (mode === 'local') { saveLocal(); return; }
-    if (mode !== 'db') return;
-    var data = JSON.parse(JSON.stringify(p));
-    var c = canon(data);
-    if (c.length > 900000) { setStatus('toobig'); return; } /* Firestore and the Claude db cap a document near 1 MB */
-    lastWritten[p.id] = c;
-    var col = dbCol;
-    chain[p.id] = (chain[p.id] || Promise.resolve()).then(function () {
-      return col.doc(p.id).set(data);
-    }).then(function () { if (!Object.keys(timers).length && !settingsTimer) setStatus('saved'); },
-      function () { setStatus('unsaved'); });
-  }
-  function touchSettings() {
-    setStatus('saving');
-    clearTimeout(settingsTimer);
-    settingsTimer = setTimeout(function () { settingsTimer = null; flushSettings(); }, 600);
-  }
-  var lastSettings = '';
-  function flushSettings() {
-    if (mode === 'pending') { touchSettings(); return; }
-    if (mode === 'local') { saveLocal(); return; }
-    if (mode !== 'db') return;
-    var data = JSON.parse(JSON.stringify(S.settings));
-    lastSettings = canon(data);
-    var col = dbCol;
-    chain.settings = (chain.settings || Promise.resolve()).then(function () {
-      return col.doc('settings').set(data);
-    }).then(function () { if (!Object.keys(timers).length && !settingsTimer) setStatus('saved'); },
-      function () { setStatus('unsaved'); });
-  }
-  function removeStored(id) {
-    if (mode === 'db') {
-      delete lastWritten[id];
-      var col = dbCol;
-      chain[id] = (chain[id] || Promise.resolve()).then(function () { return col.doc(id).delete(); }).then(null, function () { setStatus('unsaved'); });
-    } else if (mode === 'local') { saveLocal(); }
-  }
-  function formFocused() {
-    var a = document.activeElement;
-    return a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.id !== 'fx' ? true : (a && a.id === 'fx');
-  }
-  function onSnap(snap) {
-    var prods = [], settings = null;
-    snap.docs.forEach(function (d) {
-      var data = d.data();
-      if (!data) return;
-      if (d.id === 'settings') settings = data;
-      else if (d.id.indexOf('p_') === 0) prods.push(data);
-    });
-    if (!snap.metadata.fromCache) { loaded = true; clearTimeout(loadTimer); if (!Object.keys(timers).length && !settingsTimer) setStatus('saved'); }
-    var changed = false;
-    if (prods.length) {
-      var next = [];
-      prods.forEach(function (data) {
-        var local = S.products.filter(function (x) { return x.id === data.id; })[0];
-        if (local && (timers[data.id] || lastWritten[data.id] === canon(data))) next.push(local);
-        else { next.push(normProduct(data)); changed = true; }
-      });
-      S.products.forEach(function (x) { if (timers[x.id] && !next.some(function (y) { return y.id === x.id; })) next.push(x); });
-      if (next.length !== S.products.length) changed = true;
-      next.sort(function (a, b) { return (a.created || 0) - (b.created || 0); });
-      S.products = next;
-      if (!S.products.some(function (p) { return p.id === S.active; })) S.active = S.products[0].id;
-    }
-    if (settings && canon(settings) !== lastSettings) {
-      S.settings = normSettings(settings); lastSettings = canon(settings); changed = true;
-    }
-    if (changed) {
-      renderTabs(); fillSettingsForm(); renderMkEditor(); refreshMkSelect();
-      if (!formFocused()) fillForm(cur());
-      renderOutputs();
-    }
-  }
-  var loadTimer = null;
-
-  /* ---------- rendering ---------- */
-  function row(label, amount, cls, note) {
-    return '<tr class="' + (cls || '') + '"><td>' + label + (note ? '<span class="note">' + note + '</span>' : '') +
-      '</td><td class="n">' + usd(amount) + '</td></tr>';
-  }
-
-  function renderSim(p, r) {
-    var fx = n(S.settings.fx);
-    var perUnit = r.perUnitNet;
-    $('s-total').textContent = usd(r.total);
-    $('s-net').textContent = usd(r.net);
-    $('s-unit').textContent = usd(perUnit);
-    $('s-unit-iva').textContent = usd(r.perUnitGross);
-    $('s-total-clp').textContent = fx > 0 ? clp(r.total * fx) : '';
-    $('s-net-clp').textContent = fx > 0 ? clp(r.net * fx) : '';
-    $('s-unit-clp').textContent = fx > 0 ? clp(perUnit * fx) : '';
-    var kg = function (v) { return v.toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' kg'; };
-    $('wtotal').textContent = r.qty > 0 ? 'Shipment: ' + kg(r.weight) : '';
-    $('volHint').textContent = r.cbm > 0
-      ? r.cartons + (r.cartons === 1 ? ' carton, ' : ' cartons, ') + m3(r.cbm) + ' (' + (r.cbm / r.qty * 1e6).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' cm³ per unit). Volumetric weight ' + kg(r.volWeight) + ' vs actual ' + kg(r.weight) + ', air charges ' + kg(r.chargeable) + '.'
-      : 'Add the carton size to get the volume (needed for sea LCL) and the volumetric weight (air charges whichever is higher).';
-    var lclOn = r.mode === 'lcl';
-    ['f-rate', 'f-origin', 'f-vdiv', 'f-agent'].forEach(function (id) { $(id).disabled = lclOn; });
-
-    $('build').innerHTML =
-      row('Goods, ' + r.qty.toLocaleString('en-US') + ' units at ' + usd(n(p.sim.price)) + ' FCA', r.goods) +
-      (lclOn
-        ? row('Sea freight, share of LCL shipment', r.freight, '', m3(r.cbm) + ' of ' + m3(r.alloc.totalCbm) + ' in the shipment, billed ' + m3(r.alloc.billed))
-        : row('Air freight and origin charges', r.freight, '', r.chargeable > r.weight
-            ? 'Charged on volumetric weight ' + kg(r.chargeable) + ' (actual ' + kg(r.weight) + ')'
-            : kg(r.chargeable) + (r.cbm > 0 ? ', volumetric ' + kg(r.volWeight) : ''))) +
-      row('Insurance', r.ins) +
-      row('CIF value', r.cif, 'sub', 'Base for duty and IVA') +
-      row('Customs duty ' + (r.dutyRate * 100).toFixed(0) + '%', r.duty) +
-      row('IVA 19%', r.iva, '', 'On CIF plus duty: ' + usd(r.ivaBase)) +
-      row(lclOn ? 'Customs agent and local, share of shipment' : 'Agent, handling and local delivery', r.agent, '', lclOn ? 'Split by goods value' : '') +
-      row('Total cash out', r.total, 'total') +
-      row('IVA credit you can use later', -r.iva, 'credit', 'Offsets IVA on your sales') +
-      row('Net cost', r.net, 'total') +
-      row('Landed cost per unit incl. IVA', r.perUnitGross, '', 'Total cash out divided by units') +
-      row('Net cost per unit (after IVA credit)', perUnit, 'final', fx > 0 ? clp(perUnit * fx) + ' at ' + grp(fx) + ' CLP per USD' : '');
-
-    var parts = [
-      { k: 'Goods', v: r.goods, c: 'var(--s-goods)' },
-      { k: 'Freight and insurance', v: r.freight + r.ins, c: 'var(--s-freight)' },
-      { k: 'Duty', v: r.duty, c: 'var(--s-duty)' },
-      { k: 'IVA', v: r.iva, c: 'var(--s-iva)' },
-      { k: 'Agent and local', v: r.agent, c: 'var(--s-agent)' }
-    ];
-    var bar = '', leg = '';
-    parts.forEach(function (x) {
-      var w = r.total > 0 ? (x.v / r.total) * 100 : 0;
-      if (w > 0) bar += '<span style="width:' + w + '%;background:' + x.c + '"></span>';
-      leg += '<li><i style="background:' + x.c + '"></i>' + x.k + ' <b>' + w.toFixed(1) + '%</b></li>';
-    });
-    $('bar').innerHTML = bar;
-    $('legend').innerHTML = leg;
-
-    var steps = [
-      { w: 'Order placed', note: 'Supplier deposit', v: r.deposit },
-      { w: 'Before shipping', note: 'Balance to supplier', v: r.goods - r.deposit },
-      { w: 'Shipment', note: 'Freight and insurance', v: r.freight + r.ins },
-      { w: 'Customs release', note: 'Duty, IVA and agent, paid before pickup', v: r.duty + r.iva + r.agent },
-      { w: 'Next month, F29', note: 'IVA credit, only if you have sales IVA to offset', v: -r.iva, credit: true }
-    ];
-    var run = 0, html = '';
-    steps.forEach(function (s) {
-      run += s.v;
-      html += '<tr class="' + (s.credit ? 'credit' : '') + '"><td>' + s.w + '<span class="note">' + s.note +
-        '</span></td><td class="n">' + usd(s.v) + '</td><td class="n">' + usd(run) + '</td></tr>';
-    });
-    $('flow').innerHTML = html;
-
-    var an = $('agentnote');
-    if (lclOn) {
-      an.innerHTML = '<strong>Shipping in the combined LCL shipment.</strong> Freight, origin and agent inputs on the left are not used for this product while it is ticked in "All products". The customs agent rule applies to the whole shipment: ' + usd(LCL.goods) + ' in goods.';
-    } else if (r.goods > 1000) {
-      an.innerHTML = '<strong>Customs agent required.</strong> Commercial imports above about US$1,000 need a licensed customs agent (agente de aduanas) in Chile. This order is ' + usd(r.goods) + ' in goods.';
-    } else {
-      an.innerHTML = '<strong>Under the US$1,000 line.</strong> Commercial goods up to about US$1,000 may clear without an agent. Ask your courier or customs agent which process applies.';
-    }
-
-    var chips = document.querySelectorAll('#chips .chip');
-    for (var i = 0; i < chips.length; i++) {
-      chips[i].setAttribute('aria-pressed', parseFloat(chips[i].getAttribute('data-price')) === n(p.sim.price) ? 'true' : 'false');
-    }
-  }
-
-  function plrow(label, v, cls, q, qty, rrp, note) {
-    var pct = rrp > 0 ? (v / rrp * 100).toFixed(1) + '%' : '-';
-    return '<tr class="' + (cls || '') + '"><td>' + label + (note ? '<span class="note">' + note + '</span>' : '') +
-      '</td><td class="n">' + clp(v) + '</td><td class="n">' + pct + '</td><td class="n">' + clp(v * qty) + '</td></tr>';
-  }
-
-  function profitOn(p, r, mk) {
-    return calcPL(r, p.pl, mk, S.settings.fx);
-  }
-
-  function renderPL(p, r) {
-    var mk = mkById(p.pl.mk);
-    var fx = n(S.settings.fx);
-    var q = calcPL(r, p.pl, mk, fx);
-    var qty = r.qty;
-    var rrp = q.rrp;
-    var fullOn = p.pl.full === true || p.pl.full === '1';
-    $('fullOpts').hidden = !fullOn;
-    $('fullNote').textContent = !fullOn ? 'Off: you store and ship from your own place. Turn on to add Full storage and old-stock charges.'
-      : !isMercadoLibre(mk) ? 'Full only applies to Mercado Libre. It is ignored for ' + mk.name + ', but still counted in the Mercado Libre rows of the comparison.'
-      : (n(p.pl.days) <= 0 ? 'Enter the days to sell one unit, storage cost depends on it. '
-      : '') + 'Daily storage per unit by size, plus old-stock charges for units stored more than 4 months (Mercado Libre Chile tariffs). Commission and shipping stay the same. Check that lithium battery products are accepted in Full before relying on it.';
-    $('plTotHead').textContent = 'Total, ' + qty.toLocaleString('en-US') + ' units';
-    var html = '';
-    html += plrow('RRP (consumer price, IVA included)', rrp, 'sub', q, qty, rrp);
-    html += plrow('IVA on sale (19%)', -q.saleIva, 'neg', q, qty, rrp);
-    html += plrow('Net revenue', q.netRev, 'sub', q, qty, rrp);
-    html += plrow('Marketplace commission', -q.comm, 'neg', q, qty, rrp, mk.name + ', ' + n(mk.commission) + '% of RRP');
-    html += plrow('Marketplace fixed fee', -q.fixed, 'neg', q, qty, rrp,
-      n(mk.fixed) > 0 && n(mk.fixedMax) > 0 ? 'Only when the price is ' + clp(n(mk.fixedMax)) + ' or less' : '');
-    html += plrow('Shipping to customer you pay', -q.ship, 'neg', q, qty, rrp,
-      n(mk.ship) > 0 && n(mk.shipMin) > 0 ? (q.ship > 0 ? 'Free shipping required from ' + clp(n(mk.shipMin)) : 'Not required below ' + clp(n(mk.shipMin)) + ', buyer pays') : '');
-    if (q.full) {
-      html += plrow('Full storage', -q.fullStore, 'neg', q, qty, rrp,
-        'Average ' + q.avgDays.toFixed(0) + ' days in stock per unit at $' + (FULL[p.pl.fullSize] || FULL.S).day.toFixed(2).replace('.', ',') + ' a day');
-      if (q.fullOld > 0) html += plrow('Full old-stock charges', -q.fullOld, 'neg', q, qty, rrp, 'Units still in stock after 4 months');
-      if (q.fullIn > 0) html += plrow('Sending stock to Full', -q.fullIn, 'neg', q, qty, rrp, clp(n(p.pl.fullIn)) + ' spread over ' + qty.toLocaleString('en-US') + ' units');
-    }
-    html += plrow('Returns and losses', -q.ret, 'neg', q, qty, rrp, n(p.pl.returns) + '% of net revenue');
-    html += plrow('Product landed cost, net of IVA credit', -q.landed, 'neg', q, qty, rrp, usd(r.perUnitNet) + ' at ' + grp(fx) + ' CLP per USD');
-    html += plrow('Contribution before ads', q.contribPre, 'sub', q, qty, rrp);
-    html += plrow('Ad spend', -q.ads, 'neg', q, qty, rrp, q.roas > 0 ? 'ROAS ' + q.roas + 'x on RRP' : 'No ads');
-    html += plrow('Contribution profit', q.profit, 'final', q, qty, rrp, q.netRev > 0 ? 'Margin ' + (q.margin * 100).toFixed(1) + '% of net revenue' : '');
-    $('pl').innerHTML = html;
-
-    var s = '';
-    var cls = q.profit >= 0 ? 'pos' : 'neg';
-    s += '<div class="line"><span>Profit per unit</span><span class="' + cls + '">' + clp(q.profit) + ' (' + (q.margin * 100).toFixed(1) + '%)</span></div>';
-    s += '<div class="line"><span>Profit on this order</span><span class="' + cls + '">' + clp(q.profit * qty) + '</span></div>';
-    if (q.days > 0 && qty > 0) {
-      var months = q.sellDays / 30;
-      s += '<div class="line"><span>Sales pace</span><span>' + (q.perMonth >= 10 ? Math.round(q.perMonth) : q.perMonth.toFixed(1)) + ' units a month</span></div>';
-      s += '<div class="line"><span>Time to sell the whole order</span><span>' + Math.round(q.sellDays) + ' days (' + (months < 10 ? months.toFixed(1) : Math.round(months)) + ' months)</span></div>';
-      s += '<div class="line"><span>Profit per month while selling</span><span class="' + cls + '">' + clp(q.profit * Math.min(q.perMonth, qty)) + '</span></div>';
-    }
-    if (q.beRoas === null) {
-      s += '<div class="line"><span>Break-even ROAS</span><span class="neg">Loses money before ads</span></div>';
-    } else {
-      s += '<div class="line"><span>Break-even ROAS</span><span>' + q.beRoas.toFixed(2) + 'x' + (q.roas > 0 ? ' (yours ' + q.roas + 'x)' : '') + '</span></div>';
-    }
-    if (q.tRrp === null) {
-      s += '<div class="line"><span>RRP for ' + n(p.pl.target) + '% margin</span><span class="neg">Not reachable with these costs</span></div>';
-    } else {
-      s += '<div class="line"><span>RRP for ' + n(p.pl.target) + '% margin</span><span>' + clp(Math.ceil(q.tRrp / 10) * 10) + '</span></div>';
-    }
-    s += '<div class="line"><span>IVA you pay the SII per unit (F29)<span class="hint" style="display:block">' + clp(q.saleIva) + ' collected, minus ' + clp(q.importIva) + ' import IVA and ' + clp(q.feeIva) + ' IVA on marketplace fees</span></span><span>' + clp(q.ivaPay) + '</span></div>';
-    if (q.absorb > 0) {
-      s += '<div class="line"><span>Units to sell before the import IVA credit is used</span><span>' + grp(q.absorb) + (q.absorb > qty ? ' (more than this order)' : '') + '</span></div>';
-    }
-    $('plsum').innerHTML = s;
-
-    var best = -Infinity, rows = [];
-    S.settings.mk.forEach(function (m) {
-      var x = calcPL(r, p.pl, m, fx);
-      rows.push({ m: m, x: x });
-      if (x.profit > best) best = x.profit;
-    });
-    var c = '';
-    rows.forEach(function (o) {
-      var isSel = o.m.id === mk.id;
-      c += '<tr class="' + (isSel ? 'sel' : '') + '"><td>' + esc(o.m.name) + (o.m.verified ? '' : ' <span class="badge warn">placeholder</span>') +
-        (o.x.profit === best && rows.length > 1 && rrp > 0 ? ' <span class="badge">best</span>' : '') +
-        '</td><td class="n">' + n(o.m.commission) + '%</td><td class="n ' + (o.x.profit >= 0 ? 'pos' : 'neg') + '">' + clp(o.x.profit) +
-        '</td><td class="n">' + (o.x.margin * 100).toFixed(1) + '%</td></tr>';
-    });
-    $('cmp').innerHTML = c;
-  }
-
-  var LCL = { map: {}, totalCbm: 0, billed: 0, cost: 0, goods: 0, ids: [] };
-  function simFor(p) { return calcSim(p.sim, LCL.map[p.id]); }
-  function m3(v) { return v.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' m³'; }
-
-  function renderOverview() {
-    var fx = n(S.settings.fx);
-    var cfg = S.settings.lcl;
-    var h = '';
-    var tot = { qty: 0, goods: 0, cbm: 0, total: 0, net: 0, iva: 0, profit: 0, netRev: 0, n: 0, missingVol: [], noPrice: [] };
+  var LCL, CACHE = {};
+  function recompute() {
+    LCL = lclAlloc(S.products, lclCfg());
+    CACHE = {};
     S.products.forEach(function (p) {
-      var r = simFor(p);
+      var r = calcSim(p.sim, LCL.map[p.id]);
       var mk = mkById(p.pl.mk);
-      var q = calcPL(r, p.pl, mk, fx);
-      var has = n(p.sim.price) > 0;
-      var inL = p.sim.lcl === true || p.sim.lcl === '1';
-      if (cfg.on && inL) {
-        tot.n++; tot.qty += r.qty; tot.goods += r.goods; tot.cbm += r.cbm; tot.total += r.total; tot.net += r.net; tot.iva += r.iva;
-        if (q.rrp > 0) { tot.profit += q.profit * r.qty; tot.netRev += q.netRev * r.qty; } else tot.noPrice.push(p.name || 'Untitled');
-        if (!(r.cbm > 0)) tot.missingVol.push(p.name || 'Untitled');
-      }
-      h += '<tr data-id="' + esc(p.id) + '" class="' + (p.id === S.active ? 'active' : '') + '">' +
-        '<td><input type="checkbox" class="lclpick" data-id="' + esc(p.id) + '"' + (inL ? ' checked' : '') + (cfg.on ? '' : ' disabled') +
-        ' aria-label="Include ' + esc(p.name || 'Untitled') + ' in the LCL shipment"></td>' +
-        '<td><button type="button" class="pname" data-id="' + esc(p.id) + '">' + esc(p.name || 'Untitled') + '</button></td>' +
-        '<td class="n">' + r.qty.toLocaleString('en-US') + '</td>' +
-        '<td class="n">' + (r.cbm > 0 ? m3(r.cbm) : '-') + '</td>' +
-        '<td class="n">' + (has ? usd(n(p.sim.price)) : '-') + '</td>' +
-        '<td class="n">' + (has ? usd(r.perUnitNet) : '-') + '</td>' +
-        '<td class="n">' + (q.rrp > 0 ? clp(q.rrp) : '-') + '</td>' +
-        '<td>' + esc(mk.name) + '</td>' +
-        '<td class="n ' + (has && q.rrp > 0 ? (q.profit >= 0 ? 'pos' : 'neg') : '') + '">' + (has && q.rrp > 0 ? clp(q.profit) : '-') + '</td>' +
-        '<td class="n">' + (has && q.rrp > 0 ? (q.margin * 100).toFixed(1) + '%' : '-') + '</td></tr>';
+      CACHE[p.id] = { r: r, pl: calcPL(r, p.pl, mk, S.settings.fx), mk: mk };
     });
-    $('overviewBody').innerHTML = h;
+  }
 
-    /* Shipment totals */
-    $('lclOpts').hidden = !cfg.on;
-    var foot = '', sum = '', note = '';
-    if (cfg.on && tot.n > 0) {
-      var margin = tot.netRev > 0 ? tot.profit / tot.netRev : 0;
-      foot = '<tr><td></td><td>Shipment total (' + tot.n + (tot.n === 1 ? ' product' : ' products') + ')</td>' +
-        '<td class="n">' + tot.qty.toLocaleString('en-US') + '</td><td class="n">' + m3(tot.cbm) + '</td>' +
-        '<td class="n">' + usd(tot.goods) + '<span class="note">goods total</span></td><td class="n">' + usd(tot.net) + '<span class="note">net cost total</span></td><td></td><td></td>' +
-        '<td class="n ' + (tot.profit >= 0 ? 'pos' : 'neg') + '">' + clp(tot.profit) + '<span class="note">contribution total</span></td><td class="n">' + (margin * 100).toFixed(1) + '%</td></tr>';
-      var used = LCL.billed > 0 ? Math.min(1, tot.cbm / LCL.billed) : 0;
-      sum = '<div class="fill" role="img" aria-label="Share of billed volume used"><span style="width:' + (used * 100).toFixed(1) + '%"></span></div>' +
-        '<div class="hint">' + m3(tot.cbm) + ' used of ' + m3(LCL.billed) + ' billed (' + (used * 100).toFixed(0) + '%)' +
-        (LCL.billed > tot.cbm ? '. You pay for ' + m3(LCL.billed - tot.cbm) + ' of empty space' : '') + '</div>' +
-        '<div class="lclstats" style="margin-top:10px">' +
-        '<div><div class="k">Goods value (FCA)</div><div class="v">' + usd(tot.goods) + '</div></div>' +
-        '<div><div class="k">Sea freight, whole shipment</div><div class="v">' + usd(LCL.cost) + '</div></div>' +
-        '<div><div class="k">Total cash out</div><div class="v">' + usd(tot.total) + '</div></div>' +
-        '<div><div class="k">Net cost after IVA credit</div><div class="v">' + usd(tot.net) + '</div></div>' +
-        '<div><div class="k">Total contribution</div><div class="v ' + (tot.profit >= 0 ? 'pos' : 'neg') + '">' + clp(tot.profit) + '</div></div>' +
-        '</div>';
-      var warn = [];
-      if (tot.missingVol.length) warn.push('No carton size yet for ' + tot.missingVol.join(', ') + ', so they take no freight share. Enter carton size and units per carton in each product.');
-      if (tot.noPrice.length) warn.push('No RRP yet for ' + tot.noPrice.join(', ') + ', so they are left out of the contribution.');
-      if (tot.goods > 1000) warn.push('Goods above US$1,000: the shipment needs a customs agent.');
-      note = warn.join(' ') + (warn.length ? ' ' : '') + 'Freight is split by volume and the agent cost by goods value. Each product’s landed cost and P&L below use its share. Ask the forwarder what the price includes, the transit time, and whether lithium battery products are accepted by sea.';
-    } else if (cfg.on) {
-      note = 'Tick the products to include in the table below.';
-    } else {
-      note = 'Off: each product ships on its own by air, using its own freight inputs.';
+  /* what-if: same product, another quantity and mode, other products unchanged */
+  function scen(p, qty, sea) {
+    var q = JSON.parse(JSON.stringify(p));
+    q.sim.qty = String(qty); q.sim.lcl = !!sea;
+    var ps = S.products.map(function (x) { return x.id === p.id ? q : x; });
+    var al = lclAlloc(ps, lclCfg());
+    var r = calcSim(q.sim, sea ? al.map[q.id] : null);
+    var pl = calcPL(r, q.pl, mkById(q.pl.mk), S.settings.fx);
+    return { r: r, pl: pl, qty: qty, fill: sea && al.billed ? al.totalCbm / al.billed : 0 };
+  }
+  function unitCbm(p) {
+    var c = n(p.sim.cl) * n(p.sim.cw) * n(p.sim.ch) / 1e6;
+    return c / Math.max(1, Math.round(n(p.sim.upc)) || 1);
+  }
+  function fillQty(p) {
+    var others = 0;
+    S.products.forEach(function (x) { if (x.id !== p.id && (x.sim.lcl === true)) others += CACHE[x.id].r.cbm; });
+    var room = Math.max(0, n(S.settings.lcl.min) - others);
+    var u = unitCbm(p);
+    return u > 0 ? Math.floor(room / u) : 0;
+  }
+
+  /* ===== sidebar form ===== */
+  var SPEC = [
+    { t: 'Buy', hint: function (p, c) { return usd(c.r.goods); }, f: [
+      ['s.qty', 'Quantity (units)'], ['s.price', 'FCA price per unit (US$)'], ['s.dep', 'Deposit %'] ] },
+    { t: 'Ship', hint: function (p, c) { return p.sim.lcl ? 'Sea · ' + m3(c.r.cbm) : 'Air · ' + c.r.chargeable.toFixed(1) + ' kg'; }, f: [
+      ['mode'],
+      ['s.cl', 'Carton length (cm)'], ['s.cw', 'Carton width (cm)'], ['s.ch', 'Carton height (cm)'], ['s.upc', 'Units per carton'],
+      ['s.kgu', 'Weight per unit (kg)', 'air'], ['s.rate', 'Air rate (US$/kg)', 'air'], ['s.origin', 'Origin fee (US$)', 'air'], ['s.agent', 'Customs agent (US$)', 'air'],
+      ['s.vdiv', 'Volumetric divisor', 'air', ['6000', '5000']],
+      ['s.insp', 'Insurance %'], ['duty'] ] },
+    { t: 'Sell', hint: function (p, c) { return c.mk.name.split(' ')[0] + ' · ' + clp(c.pl.rrp); }, f: [
+      ['p.mk', 'Marketplace', null, 'mk'], ['m.commission', 'Commission %'],
+      ['p.rrp', 'Selling price (CLP, incl. IVA)'], ['p.roas', 'ROAS (ads)'], ['p.returns', 'Returns %'], ['p.target', 'Target margin %'],
+      ['p.days', 'Days to sell one unit'], ['full'] ] },
+    { t: 'Settings for all products', hint: function () { return '1 US$ = ' + grp(n(S.settings.fx)) + ' CLP'; }, f: [
+      ['g.fx', 'CLP per 1 US$'], ['l.rate', 'Sea rate (US$/m³)'], ['l.min', 'Minimum billed (m³)'], ['l.agent', 'Shared agent (US$)'] ] }
+  ];
+  var formBuilt = false;
+
+  var ADV = ['s.dep', 's.insp', 's.vdiv', 'p.returns', 'p.target'];
+  function fieldHtml(f) {
+    if (f[0] === 'mode') {
+      return '<div class="wide"><div class="seg" role="radiogroup" aria-label="Shipping method"><button type="button" role="radio" data-mode="air">By air</button><button type="button" role="radio" data-mode="sea">By sea (shared)</button></div></div>';
     }
-    $('overviewFoot').innerHTML = foot;
-    $('lclSummary').innerHTML = sum;
-    $('lclNote').textContent = note;
+    if (f[0] === 'duty') {
+      return '<label class="f wide"><span>Tariff treatment (import duty)</span><select data-k="s.dutyMode"><option value="formF">With Form F certificate of origin (China FTA)</option><option value="general">Without certificate (general tariff)</option><option value="custom">Custom rate</option></select></label>' +
+        '<label class="f" data-show="dff"><span>Duty with Form F %</span><input type="text" inputmode="decimal" data-k="s.dutyFF"></label>' +
+        '<label class="f" data-show="dgen"><span>General tariff %</span><input type="text" inputmode="decimal" data-k="s.dutyGen"></label>' +
+        '<label class="f" data-show="dcus"><span>Custom duty %</span><input type="text" inputmode="decimal" data-k="s.dutyCustom"></label>' +
+        '<label class="f"><span>Tariff code (HS), for reference</span><input type="text" data-k="s.hs" placeholder="e.g. 8414.80"></label>' +
+        '<p class="note wide">The general tariff is 6% (Aduanas). With a valid Form F the China FTA rate for your tariff code applies: it can be 0%, still being reduced in stages, or excluded from the FTA. Ask your customs agent to confirm the code and the rate before you order.</p>';
+    }
+    if (f[0] === 'full') {
+      return '<div class="wide" data-show="ml"><label class="chk"><input type="checkbox" data-k="p.full"> Ship through Mercado Libre Full</label></div>' +
+        '<label class="f" data-show="full"><span>Full size</span><select data-k="p.fullSize"><option value="S">S (small)</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select></label>' +
+        '<label class="f" data-show="full"><span>Inbound cost, total (CLP)</span><input type="text" inputmode="decimal" data-k="p.fullIn"></label>';
+    }
+    var show = f[2] ? ' data-show="' + f[2] + '"' : '';
+    if (f[3] === 'mk') return '<label class="f wide"><span>' + f[1] + '</span><select data-k="p.mk" id="mkSel"></select></label>';
+    if (Array.isArray(f[3])) return '<label class="f"' + show + '><span>' + f[1] + '</span><select data-k="' + f[0] + '">' + f[3].map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select></label>';
+    return '<label class="f"' + show + '><span>' + f[1] + '</span><input type="text" inputmode="decimal" data-k="' + f[0] + '"></label>';
   }
-
-  function renderTabs() {
-    var h = '';
-    S.products.forEach(function (p) {
-      h += '<button type="button" class="tab" role="tab" data-id="' + esc(p.id) + '" aria-selected="' + (p.id === S.active) + '">' + esc(p.name || 'Untitled') + '</button>';
+  function buildForm() {
+    var html = '<label class="f"><span>Product name</span><input type="text" data-k="n.name"></label><p class="note" id="lastEdit" style="margin:-6px 0 0"></p>';
+    SPEC.forEach(function (g, gi) {
+      var main = '', adv = '';
+      g.f.forEach(function (f) { var h = fieldHtml(f); if (ADV.indexOf(f[0]) >= 0) adv += h; else main += h; });
+      html += '<details class="grp" data-g="' + gi + '"' + (gi === 0 ? ' open' : '') + '><summary>' + g.t + '<span class="hint" id="hint' + gi + '"></span></summary><div class="fields">' + main +
+        (adv ? '<details class="adv wide"><summary>More options</summary><div class="fields" style="padding:8px 0 0">' + adv + '</div></details>' : '') +
+        (gi === 2 ? '<p class="note wide" id="mkNote"></p>' : '') + '</div></details>';
     });
-    h += '<button type="button" class="tab add" id="addProduct">+ Add product</button>';
-    $('tabs').innerHTML = h;
+    html += '<details class="grp"><summary>Notes, links, photos</summary><div class="fields"><label class="f wide"><span>Supplier, reminders</span><textarea data-k="n.notes"></textarea></label>' +
+      '<label class="f wide"><span>Links (one per line)</span><textarea data-k="n.linksText" style="min-height:60px"></textarea></label><div class="note wide" id="linkList"></div>' +
+      '<div class="wide"><div class="photos" id="photoList"></div><label class="btn" style="display:inline-block;cursor:pointer">Add photos<input type="file" id="photoIn" accept="image/*" multiple hidden></label><p class="note" id="photoMsg" style="margin:6px 0 0"></p></div></div></details>';
+    $('form').innerHTML = html;
+    var sel = $('mkSel');
+    sel.innerHTML = S.settings.mk.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.name) + (m.official ? '' : ' (unconfirmed)') + '</option>'; }).join('');
+    formBuilt = true;
   }
+  $('form').addEventListener('toggle', function (e) {
+    var d = e.target;
+    if (d.classList && d.classList.contains('grp') && d.open) {
+      $('form').querySelectorAll('details.grp').forEach(function (o) { if (o !== d) o.open = false; });
+    }
+  }, true);
 
-  function renderOutputs() {
-    var p = cur();
-    if (!p) return;
-    LCL = lclAlloc(S.products, S.settings.lcl);
-    var r = simFor(p);
-    renderSim(p, r);
-    renderPL(p, r);
-    renderOverview();
+  function getVal(k) {
+    var p = cur(), pre = k.slice(0, 1), key = k.slice(2);
+    if (pre === 's') return p.sim[key];
+    if (pre === 'p') return p.pl[key];
+    if (pre === 'n') return key === 'linksText' ? (p.links || []).map(function (l) { return l.url; }).join('\n') : p[key];
+    if (pre === 'm') return mkById(p.pl.mk)[key];
+    if (pre === 'g') return S.settings[key];
+    if (pre === 'l') return S.settings.lcl[key];
   }
-
-  function renderLinks() {
-    var p = cur();
-    var h = '';
-    (p.links || []).forEach(function (l, i) {
-      var label = l.url;
-      try { var u = new URL(l.url); label = u.hostname.replace(/^www\./, '') + (u.pathname.length > 1 ? u.pathname : ''); } catch (e) { }
-      h += '<li><a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(l.url) + '">' + esc(label) + '</a>' +
-        '<button type="button" class="x" data-i="' + i + '" aria-label="Remove link">&times;</button></li>';
+  function setVal(k, v) {
+    var p = cur(), pre = k.slice(0, 1), key = k.slice(2);
+    if (pre === 's') { p.sim[key] = v; if (key.indexOf('duty') === 0) syncDuty(p.sim); }
+    else if (pre === 'p') p.pl[key] = v;
+    else if (pre === 'n') { if (key === 'linksText') p.links = v.split('\n').map(function (t) { return t.trim(); }).filter(Boolean).map(function (u) { return { url: u }; }); else p[key] = v; }
+    else if (pre === 'm') mkById(p.pl.mk)[key] = v;
+    else if (pre === 'g') S.settings[key] = v;
+    else if (pre === 'l') S.settings.lcl[key] = v;
+  }
+  function fillForm() {
+    var form = $('form');
+    form.querySelectorAll('[data-k]').forEach(function (el) {
+      var v = getVal(el.getAttribute('data-k'));
+      if (el.type === 'checkbox') el.checked = v === true || v === '1';
+      else if (document.activeElement !== el) el.value = v === undefined ? '' : v;
     });
-    $('links').innerHTML = h;
+    applyVis();
   }
-  function photoSrc(ph) { return ph.id ? '/_blob/' + ph.id : (ph.data || ''); }
-  function renderPhotos() {
-    var p = cur();
-    var h = '';
-    (p.photos || []).forEach(function (ph, i) {
-      h += '<div class="ph"><button type="button" class="open" data-i="' + i + '" aria-label="Open photo ' + (i + 1) + '"><img src="' + esc(photoSrc(ph)) + '" alt="Reference photo ' + (i + 1) + '"></button>' +
-        '<button type="button" class="x" data-i="' + i + '" aria-label="Remove photo">&times;</button></div>';
+  function applyVis() {
+    var p = cur(), sea = p.sim.lcl === true, mk = mkById(p.pl.mk), ml = isMercadoLibre(mk), full = ml && p.pl.full === true;
+    $('form').querySelectorAll('[data-show]').forEach(function (el) {
+      var w = el.getAttribute('data-show');
+      var dm = p.sim.dutyMode;
+      el.hidden = (w === 'air' && sea) || (w === 'ml' && !ml) || (w === 'full' && !full) || (w === 'dff' && dm !== 'formF') || (w === 'dgen' && dm !== 'general') || (w === 'dcus' && dm !== 'custom');
     });
-    $('photos').innerHTML = h;
-  }
-
-  function fillForm(p) {
-    if (!p) return;
-    $('f-name').value = p.name;
-    $('f-notes').value = p.notes || '';
-    SIMF.forEach(function (k) { $('f-' + k).value = p.sim[k]; });
-    PLF.forEach(function (k) { $('f-' + k).value = p.pl[k]; });
-    $('f-full').checked = p.pl.full === true || p.pl.full === '1';
-    $('f-fullSize').value = FULL[p.pl.fullSize] ? p.pl.fullSize : 'S';
-    refreshMkSelect();
-    renderLinks();
+    $('form').querySelectorAll('[data-mode]').forEach(function (b) {
+      b.setAttribute('aria-checked', String((b.getAttribute('data-mode') === 'sea') === sea));
+    });
+    var c = CACHE[p.id];
+    SPEC.forEach(function (g, gi) { var h = $('hint' + gi); if (h) h.textContent = g.hint(p, c); });
+    var le = $('lastEdit'); if (le) le.textContent = p.updatedBy ? 'Last edit by ' + p.updatedBy + ', ' + fdateTime(p.updatedAt) : '';
+    var ll = $('linkList'); if (ll) ll.innerHTML = (p.links || []).map(function (l) { var u = safeUrl(l.url); return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 48)) + '</a>' : esc(l.url); }).join(' · ');
     renderPhotos();
-  }
-  function fillSettingsForm() {
-    $('fx').value = S.settings.fx;
-    var l = S.settings.lcl;
-    $('f-lcl').checked = !!l.on;
-    $('lcl-rate').value = l.rate; $('lcl-min').value = l.min; $('lcl-agent').value = l.agent;
-  }
-  function refreshMkSelect() {
-    var p = cur();
-    var sel = $('f-mk');
-    var h = '';
-    S.settings.mk.forEach(function (m) { h += '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>'; });
-    sel.innerHTML = h;
-    sel.value = p ? mkById(p.pl.mk).id : '';
-  }
-  function renderMkEditor() {
-    var h = '';
-    S.settings.mk.forEach(function (m, i) {
-      h += '<tr data-i="' + i + '"><td><input type="text" data-k="name" value="' + esc(m.name) + '" aria-label="Marketplace name">' +
-        (m.note ? '<span class="hint" style="display:block;margin-top:4px;max-width:46ch;white-space:normal">' + esc(m.note) + '</span>' : '') + '</td>' +
-        '<td class="n"><input type="number" min="0" step="0.1" data-k="commission" value="' + esc(m.commission) + '" aria-label="Commission percent"></td>' +
-        '<td class="n"><input type="number" min="0" step="100" data-k="fixed" value="' + esc(m.fixed) + '" aria-label="Fixed fee in CLP"></td>' +
-        '<td class="n"><input type="number" min="0" step="100" data-k="fixedMax" value="' + esc(m.fixedMax || 0) + '" aria-label="Fixed fee applies up to this price, 0 means always"></td>' +
-        '<td class="n"><input type="number" min="0" step="100" data-k="ship" value="' + esc(m.ship) + '" aria-label="Shipping you pay in CLP"></td>' +
-        '<td class="n"><input type="number" min="0" step="100" data-k="shipMin" value="' + esc(m.shipMin || 0) + '" aria-label="Shipping applies from this price"></td>' +
-        '<td class="vb">' + (m.official ? '<span class="badge">official table</span>' : (m.verified ? '<span class="badge">edited</span>' : '<span class="badge warn">placeholder</span>')) + '</td>' +
-        '<td><button type="button" class="x" data-del="1" aria-label="Remove marketplace">&times;</button></td></tr>';
-    });
-    $('mkbody').innerHTML = h;
+    var note = $('mkNote');
+    if (note) note.textContent = (mk.official ? 'Official rate. ' : 'Unconfirmed rate. ') + (mk.note || '');
   }
 
-  function selectProduct(id) {
-    S.active = id;
-    renderTabs();
-    fillForm(cur());
-    renderOutputs();
-    $('del').removeAttribute('data-confirm');
-    $('del').textContent = 'Delete';
-    if (mode === 'local') saveLocal();
+  /* ===== product list ===== */
+  function renderList() {
+    $('plist').innerHTML = S.products.map(function (p, i) {
+      var c = CACHE[p.id], ok = c.pl.profit >= 0;
+      return '<button type="button" class="pitem" data-id="' + esc(p.id) + '" aria-current="' + (p.id === S.active) + '">' +
+        '<span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span><span class="nm">' + esc(p.name) + '</span>' +
+        '<span class="pv num ' + (ok ? 'pos' : 'neg') + '">' + clp(c.pl.profit) + '</span></button>';
+    }).join('');
   }
 
-  /* ---------- events ---------- */
-  function bindInputs() {
-    SIMF.forEach(function (k) {
-      var el = $('f-' + k);
-      var h = function () { var p = cur(); if (!p) return; p.sim[k] = el.value; touch(p); renderOutputs(); };
-      el.addEventListener('input', h); el.addEventListener('change', h);
-    });
-    PLF.forEach(function (k) {
-      var el = $('f-' + k);
-      var h = function () { var p = cur(); if (!p) return; p.pl[k] = el.value; touch(p); renderOutputs(); };
-      el.addEventListener('input', h); el.addEventListener('change', h);
-    });
-    $('f-mk').addEventListener('change', function () { var p = cur(); p.pl.mk = $('f-mk').value; touch(p); renderOutputs(); });
-    $('f-full').addEventListener('change', function () { var p = cur(); p.pl.full = $('f-full').checked; touch(p); renderOutputs(); });
-    $('f-fullSize').addEventListener('change', function () { var p = cur(); p.pl.fullSize = $('f-fullSize').value; touch(p); renderOutputs(); });
-    $('f-name').addEventListener('input', function () {
-      var p = cur(); p.name = $('f-name').value; touch(p); renderTabs(); renderOverview();
-    });
-    $('f-notes').addEventListener('input', function () { var p = cur(); p.notes = $('f-notes').value; touch(p); });
-    $('fx').addEventListener('input', function () { S.settings.fx = $('fx').value; touchSettings(); renderOutputs(); });
+  /* ===== main ===== */
+  var TABS = [['overview', 'Overview'], ['cost', 'Cost build-up'], ['pl', 'P&L per unit'], ['channels', 'Compare channels'], ['ship', 'Shipment']];
 
-    $('chips').innerHTML = TIERS.map(function (t) { return '<button class="chip" type="button" data-price="' + t[1] + '">' + t[0] + '</button>'; }).join('');
-    $('chips').addEventListener('click', function (e) {
-      var b = e.target.closest ? e.target.closest('.chip') : null;
-      if (!b) return;
-      var p = cur(); p.sim.price = b.getAttribute('data-price'); $('f-price').value = p.sim.price; touch(p); renderOutputs();
-    });
+  function renderKpis() {
+    var p = cur(), c = CACHE[p.id], r = c.r, pl = c.pl, ok = pl.profit >= 0;
+    $('kpis').innerHTML =
+      '<div class="kpi"><div class="l">Net cost per unit</div><div class="v">' + usd(r.perUnitNet) + '</div><div class="s num">' + clp(pl.landed) + ' · IVA credit excluded</div></div>' +
+      '<div class="kpi main"><div class="l">Profit per unit</div><div class="v ' + (ok ? 'pos' : 'neg') + '">' + clp(pl.profit) + '</div><div class="s">' + (pl.rrp > 0 ? pct(pl.margin) + ' margin on net sales' : 'enter a selling price') + '</div></div>' +
+      '<div class="kpi"><div class="l">Cash for this order</div><div class="v">' + usd(r.total) + '</div><div class="s">' + usd(r.iva) + ' of it is IVA you get back as credit</div></div>' +
+      '<div class="kpi"><div class="l">Total result, ' + r.qty + ' units</div><div class="v ' + (ok ? 'pos' : 'neg') + '">' + clp(pl.profit * r.qty) + '</div><div class="s">' + (pl.days > 0 ? 'about ' + Math.ceil(pl.sellDays) + ' days to sell all' : '') + '</div></div>';
+  }
+  function renderTabs() {
+    $('tabs').innerHTML = TABS.map(function (t) {
+      return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (S.tab === t[0]) + '">' + t[1] + '</button>';
+    }).join('');
+  }
 
-    $('tabs').addEventListener('click', function (e) {
-      var b = e.target.closest ? e.target.closest('button') : null;
-      if (!b) return;
-      if (b.id === 'addProduct') {
-        var p = blankProduct('New product');
-        S.products.push(p); S.active = p.id; touch(p); renderTabs(); fillForm(p); renderOutputs();
-        $('f-name').focus(); $('f-name').select();
-        return;
-      }
-      if (b.getAttribute('data-id')) selectProduct(b.getAttribute('data-id'));
+  function vOverview(p, c) {
+    var r = c.r, pl = c.pl, ok = pl.profit >= 0, sea = p.sim.lcl === true;
+    var tgt = n(p.pl.target);
+    var verdict = pl.rrp <= 0 ? 'Enter a selling price' : ok ? (pl.margin * 100 >= tgt ? 'Meets your ' + tgt + '% target' : 'Profitable, below your ' + tgt + '% target') : 'Loses money on every unit';
+    var sugs = [];
+    if (pl.rrp > 0 && pl.margin * 100 < tgt) {
+      sugs.push(pl.tRrp ? ['Raise the price', clp(pl.tRrp) + ' for a ' + tgt + '% margin', 'Keeps your current costs and ROAS ' + pl.roas + '.'] : ['Raise the price', 'Not reachable at this ROAS', 'Commission, returns and ads already take more than the target allows. Lower the ads cost or change channel.']);
+    }
+    if (sea && LCL.billed > 0 && LCL.totalCbm / LCL.billed < 0.6) {
+      var fq = fillQty(p);
+      if (fq > r.qty) { var s = scen(p, fq, true); sugs.push(['Fill the shipment', 'Only ' + Math.round(LCL.totalCbm / LCL.billed * 100) + '% of your ' + m3(LCL.billed) + ' is used', fq + ' units: ' + usd(s.r.perUnitNet) + ' net cost, ' + clp(s.pl.profit) + ' profit per unit.']); }
+    }
+    if (!sea && unitCbm(p) > 0) {
+      var sa = scen(p, r.qty, true);
+      sugs.push(['Compare by sea', usd(sa.r.perUnitNet) + ' net cost per unit', 'Same ' + r.qty + ' units in a shared container. Now by air: ' + usd(r.perUnitNet) + '.']);
+    }
+    var best = null;
+    S.settings.mk.forEach(function (m) {
+      if (!m.official) return;
+      var x = calcPL(r, Object.assign({}, p.pl, { mk: m.id }), m, S.settings.fx);
+      if (!best || x.profit > best.x.profit) best = { m: m, x: x };
     });
-    $('overviewBody').addEventListener('click', function (e) {
-      if (e.target.classList && e.target.classList.contains('lclpick')) return;
-      var tr = e.target.closest ? e.target.closest('tr') : null;
-      if (tr && tr.getAttribute('data-id')) selectProduct(tr.getAttribute('data-id'));
+    if (best && best.m.id !== p.pl.mk && best.x.profit > pl.profit + 1) {
+      sugs.push(['Try another channel', best.m.name, clp(best.x.profit) + ' profit per unit instead of ' + clp(pl.profit) + '' + '.']);
+    }
+    if (!sugs.length) sugs.push(['Nothing to fix', 'Your numbers look healthy', 'Check the P&L tab to see where each peso goes.']);
+    var warn = '';
+    if (sea && r.cbm === 0) warn = '<div class="warn">Add the carton size (Ship group) so the shared container can be split correctly.</div>';
+    if (p.pl.mk && !c.mk.official) warn += '<div class="warn" style="margin-top:8px">The ' + esc(c.mk.name) + ' commission is not confirmed. Treat this result as an estimate.</div>';
+    var chips = [
+      'IVA you pay SII per unit: ' + clp(pl.ivaPay),
+      pl.beRoas ? 'Break-even ROAS: ' + pl.beRoas.toFixed(1) : 'Loses money even with no ads',
+      pl.days > 0 ? 'About ' + pl.perMonth.toFixed(1) + ' sales per month' : '',
+      pl.absorb ? 'Customs IVA (' + usd(r.iva) + ') is used up after about ' + pl.absorb + ' sales' : ''
+    ].filter(Boolean).map(function (t) { return '<span style="border:1px solid var(--line);border-radius:6px;padding:4px 8px">' + t + '</span>'; }).join('');
+    return '<div class="card"><div class="' + (ok ? 'pos' : 'neg') + '" style="font:700 22px Archivo,sans-serif">' + verdict + '</div>' +
+      '<p class="note" style="margin:6px 0 0">' + r.qty + ' units · ' + (sea ? 'by sea, shared container' : 'by air') + ' · ' + esc(c.mk.name) + ' at ' + clp(pl.rrp) + ' · ROAS ' + pl.roas + '</p>' + (warn ? '<div style="margin-top:12px">' + warn + '</div>' : '') + '</div>' +
+      '<div><h2 class="sec" style="margin-bottom:8px">Ways to improve it</h2><div class="grid3">' + sugs.slice(0, 3).map(function (s) {
+        return '<div class="sug"><span class="t">' + s[0] + '</span><span class="h">' + esc(s[1]) + '</span><span class="d">' + esc(s[2]) + '</span></div>'; }).join('') + '</div></div>' +
+      '<div class="note" style="display:flex;gap:10px;flex-wrap:wrap">' + chips + '</div>';
+  }
+
+  function dutyCard(p, c) {
+    var s0 = p.sim, mode = s0.dutyMode;
+    function at(rate) {
+      var q = Object.assign({}, s0, { duty: String(rate) });
+      var r = calcSim(q, LCL.map[p.id]);
+      return { r: r, pl: calcPL(r, p.pl, c.mk, S.settings.fx) };
+    }
+    var a = at(s0.dutyFF), b = at(s0.dutyGen), q = Math.max(1, c.r.qty);
+    var diffNet = b.r.perUnitNet - a.r.perUnitNet, diffProfit = b.pl.profit - a.pl.profit;
+    var label = mode === 'formF' ? 'Your plan: with Form F' : mode === 'general' ? 'Your plan: without certificate' : 'Your plan: custom rate ' + n(s0.dutyCustom) + '%';
+    function row(t, x, rate, hl) {
+      return '<tr class="' + (hl ? 'hl' : '') + '"><td>' + t + '</td><td class="num">' + n(rate) + '%</td><td class="num">' + usd(x.r.duty) + '</td><td class="num">' + usd(x.r.perUnitNet) + '</td><td class="num ' + (x.pl.profit >= 0 ? 'pos' : 'neg') + '">' + clp(x.pl.profit) + '</td><td class="num ' + (x.pl.profit >= 0 ? 'pos' : 'neg') + '">' + clp(x.pl.profit * x.r.qty) + '</td></tr>';
+    }
+    return '<details class="grp"' + (mode !== 'formF' ? ' open' : '') + '><summary>What the certificate of origin is worth<span class="hint">' + (diffNet > 0 ? '+' + usd(diffNet) + ' per unit without it' : '') + '</span></summary><div class="tablewrap" style="padding:0 12px 12px"><table class="t"><thead><tr><th>Case</th><th>Duty</th><th>Duty total</th><th>Net cost / unit</th><th>Profit / unit</th><th>Total result</th></tr></thead><tbody>' +
+      row('With Form F', a, s0.dutyFF, mode === 'formF') + row('Without certificate (general tariff)', b, s0.dutyGen, mode === 'general') + '</tbody></table>' +
+      '<p class="note" style="margin:10px 0 0">' + label + '. Without the certificate this order costs <b>' + usd(diffNet) + '</b> more per unit, and your profit per unit drops by <b>' + clp(Math.abs(diffProfit)) + '</b>. ' +
+      'Duty is charged on the customs value (CIF), and the IVA you pay on top comes back as credit, so only the duty itself is a real cost.</p>' +
+      '<p class="note" style="margin:6px 0 0">Ask the supplier to confirm in writing that they issue Form F before you pay a deposit, and have the customs agent confirm the tariff code' + (s0.hs ? ' (you entered ' + esc(s0.hs) + ')' : '') + ' and its rate under the China agreement.</p></div></details>';
+  }
+
+  function vCost(p, c) {
+    var r = c.r, q = Math.max(1, r.qty);
+    var rows = [
+      ['Product (FCA)', r.goods, COLORS[0]],
+      [p.sim.lcl ? 'Sea freight share' : 'Air freight', r.freight, COLORS[1]],
+      ['Insurance', r.ins, COLORS[4]],
+      ['Import duty ' + (r.dutyRate * 100).toFixed(0) + '%', r.duty, COLORS[3]],
+      ['Customs agent', r.agent, COLORS[5]]
+    ];
+    var tot = rows.reduce(function (a, x) { return a + x[1]; }, 0);
+    var fx = n(S.settings.fx);
+    var body = rows.map(function (x) { return '<tr><td>' + x[0] + '</td><td class="num">' + usd(x[1]) + '</td><td class="num">' + usd(x[1] / q) + '</td><td class="num">' + clp(x[1] / q * fx) + '</td></tr>'; }).join('');
+    return '<div class="card tablewrap"><h3>Where the cost per unit comes from</h3><table class="t"><thead><tr><th>Item</th><th>Total</th><th>Per unit</th><th>Per unit CLP</th></tr></thead><tbody>' + body +
+      '<tr class="tot"><td>Net cost (without recoverable IVA)</td><td class="num">' + usd(r.net) + '</td><td class="num">' + usd(r.perUnitNet) + '</td><td class="num">' + clp(r.perUnitNet * fx) + '</td></tr>' +
+      '<tr><td>IVA 19% paid at customs (comes back as credit)</td><td class="num">' + usd(r.iva) + '</td><td class="num">' + usd(r.iva / q) + '</td><td class="num">' + clp(r.iva / q * fx) + '</td></tr>' +
+      '<tr class="tot"><td>Cash you need</td><td class="num">' + usd(r.total) + '</td><td class="num">' + usd(r.total / q) + '</td><td class="num">' + clp(r.total / q * fx) + '</td></tr></tbody></table></div>' +
+      '<p class="note">Deposit to the supplier: ' + usd(r.deposit) + ' (' + p.sim.dep + '% of goods). Customs value (CIF) ' + usd(r.cif) + '.</p>' + dutyCard(p, c);
+  }
+
+  function vPL(p, c) {
+    var pl = c.pl, run = pl.rrp, steps = [];
+    function total(l, v, k) { steps.push({ l: l, v: v, a: 0, b: v, k: k }); run = v; }
+    function cost(l, v, k) { steps.push({ l: l, v: -v, a: run - v, b: run, k: k || 'cost' }); run -= v; }
+    total('RRP, IVA included', pl.rrp, 'total');
+    cost('IVA on the sale', pl.saleIva, 'iva');
+    total('Net revenue', pl.netRev, 'sub');
+    cost('Commission ' + c.mk.commission + '%', pl.comm);
+    if (pl.fixed > 0) cost('Fixed fee', pl.fixed);
+    if (pl.ship > 0) cost('Free shipping', pl.ship);
+    if (pl.full) cost('Mercado Libre Full', pl.fullTotal);
+    cost('Returns ' + p.pl.returns + '%', pl.ret);
+    cost('Product landed in Chile', pl.landed);
+    total('Before ads', pl.contribPre, 'sub2');
+    cost(pl.ads > 0 ? 'Ads (ROAS ' + pl.roas + ')' : 'Ads', pl.ads);
+    total('Profit per unit', pl.profit, 'fin');
+    var lo = 0, hi = Math.max(1, pl.rrp);
+    steps.forEach(function (x) { lo = Math.min(lo, x.a, x.b); });
+    var span = hi - lo || 1;
+    function pos(v) { return (v - lo) / span * 100; }
+    var zero = pos(0);
+    var html = steps.map(function (x) {
+      var l = pos(Math.min(x.a, x.b)), w = Math.max(0.4, pos(Math.max(x.a, x.b)) - l);
+      var colr = x.k === 'total' || x.k === 'sub' ? 'var(--accent)' : x.k === 'iva' ? 'var(--muted)' : x.k === 'cost' ? 'var(--c2)' : (x.v >= 0 ? 'var(--good)' : 'var(--warn)');
+      var strong = x.k === 'sub' || x.k === 'sub2' || x.k === 'fin';
+      var vcol = (x.k === 'sub2' || x.k === 'fin') ? (x.v >= 0 ? 'pos' : 'neg') : '';
+      return '<div class="wfr' + (x.k === 'fin' ? ' fin' : '') + '"><span class="lab" style="' + (strong ? 'font-weight:' + (x.k === 'fin' ? 700 : 600) : 'color:var(--muted)') + '">' + esc(x.l) + '</span>' +
+        '<span class="bar" style="background:none;overflow:visible"><i style="left:' + l + '%;width:' + w + '%;background:' + colr + '"></i>' +
+        (lo < 0 ? '<u style="position:absolute;left:' + zero + '%;top:-4px;bottom:-4px;width:1px;background:var(--muted)"></u>' : '') + '</span>' +
+        '<span class="v num ' + vcol + '" style="' + (strong ? 'font-weight:600' : '') + '">' + clp(x.v) + '</span></div>';
+    }).join('');
+    var share = pl.rrp > 0 ? Math.round(pl.landed / pl.rrp * 100) : 0;
+    var insight = pl.rrp > 0 ? 'The product cost alone takes ' + share + '% of the price.' + (pl.profit < 0 ? ' The fix is upstream: freight and order size.' : '') : 'Enter a selling price.';
+    var chips = [
+      pl.beRoas ? 'Break-even ROAS: ' + pl.beRoas.toFixed(1) : 'Break-even ROAS: none, loses before ads',
+      'RRP for ' + p.pl.target + '% margin: ' + (pl.tRrp ? clp(pl.tRrp) : 'not reachable'),
+      'IVA you pay SII per unit: ' + clp(pl.ivaPay)
+    ].map(function (t) { return '<span style="border:1px solid var(--line);border-radius:6px;padding:4px 8px">' + t + '</span>'; }).join('');
+    return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">From the price the customer pays to your profit (CLP)</h3><span class="note">' + esc(c.mk.name) + ' · ROAS ' + pl.roas + '</span></div>' +
+      '<div class="wf">' + html + '</div><p class="note" style="margin:12px 0 0">' + insight + '</p></div>' +
+      '<div class="note" style="display:flex;gap:10px;flex-wrap:wrap">' + chips + '</div>' +
+      (pl.full ? '<div class="card"><h3>Mercado Libre Full</h3><p class="note" style="margin:0">Storage ' + clp(pl.fullStore) + ' + old-stock charge ' + clp(pl.fullOld) + ' + inbound ' + clp(pl.fullIn) + ' per unit. The average unit waits about ' + Math.round(pl.avgDays) + ' days in the warehouse.</p></div>' : '');
+  }
+
+  function vChannels(p, c) {
+    var rows = S.settings.mk.map(function (m) {
+      var x = calcPL(c.r, Object.assign({}, p.pl, { mk: m.id }), m, S.settings.fx);
+      return { m: m, x: x };
     });
-    $('overviewBody').addEventListener('change', function (e) {
-      if (!e.target.classList || !e.target.classList.contains('lclpick')) return;
-      var id = e.target.getAttribute('data-id');
-      var p = S.products.filter(function (x) { return x.id === id; })[0];
-      if (!p) return;
-      p.sim.lcl = e.target.checked; touch(p); renderOutputs();
+    var best = Math.max.apply(null, rows.map(function (q) { return q.x.profit; }));
+    var body = rows.map(function (q) {
+      var cur_ = q.m.id === p.pl.mk;
+      return '<tr class="' + (cur_ ? 'hl' : '') + '"><td>' + esc(q.m.name) + (q.m.official ? '' : ' <span class="mut">(unconfirmed)</span>') + (cur_ ? ' <span class="pill" style="color:var(--accent)">selected</span>' : '') + '</td>' +
+        '<td class="num">' + q.m.commission + '%</td><td class="num ' + (q.x.profit >= 0 ? 'pos' : 'neg') + '">' + clp(q.x.profit) + (q.x.profit === best ? ' ★' : '') + '</td>' +
+        '<td class="num">' + pct(q.x.margin) + '</td><td class="num">' + (q.x.tRrp ? clp(q.x.tRrp) : 'n/a') + '</td></tr>';
+    }).join('');
+    return '<div class="card tablewrap"><h3>Same product, every channel</h3><table class="t"><thead><tr><th>Channel</th><th>Commission</th><th>Profit / unit</th><th>Margin</th><th>Price for target</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+      '<p class="note">Uses your selling price, ROAS and returns for every row. Logistics fees of Falabella, Paris and Ripley are not included, so those channels look better here than they will be.</p>';
+  }
+
+  function vShip() {
+    var inShip = S.products.filter(function (x) { return x.sim.lcl === true; });
+    var billed = LCL.billed || n(S.settings.lcl.min);
+    var used = LCL.totalCbm, fill = billed > 0 ? Math.min(1, used / billed) : 0;
+    var p = cur(), room = Math.max(0, billed - used), u = unitCbm(p), more = u > 0 ? Math.floor(room / u) : 0;
+    var seg = '', leg = '';
+    S.products.forEach(function (x, i) {
+      if (x.sim.lcl !== true) return;
+      var cb = CACHE[x.id].r.cbm;
+      if (cb > 0) seg += '<div style="width:' + Math.max(0.5, cb / billed * 100) + '%;background:' + COLORS[i % COLORS.length] + ';min-width:14px" title="' + esc(x.name) + '"></div>';
+      leg += '<span><b style="background:' + COLORS[i % COLORS.length] + '"></b>' + esc(x.name) + ' · ' + CACHE[x.id].r.qty + ' units</span>';
     });
-    $('f-lcl').addEventListener('change', function () { S.settings.lcl.on = $('f-lcl').checked; touchSettings(); renderOutputs(); });
-    [['lcl-rate', 'rate'], ['lcl-min', 'min'], ['lcl-agent', 'agent']].forEach(function (x) {
-      $(x[0]).addEventListener('input', function () { S.settings.lcl[x[1]] = $(x[0]).value; touchSettings(); renderOutputs(); });
+    var goods = 0, frt = 0, agent = 0, iva = 0, cash = 0, contrib = 0;
+    inShip.forEach(function (x) { var r = CACHE[x.id].r; goods += r.goods; frt += r.freight; agent += r.agent + r.ins + r.duty; iva += r.iva; cash += r.total; contrib += CACHE[x.id].pl.profit * r.qty; });
+    var sc = [['Current plan', scen(p, CACHE[p.id].r.qty, p.sim.lcl === true), p.sim.lcl === true]];
+    if (unitCbm(p) > 0) {
+      if (p.sim.lcl !== true) sc.push(['By sea, same quantity', scen(p, CACHE[p.id].r.qty, true), true]);
+      else sc.push(['By air, same quantity', scen(p, CACHE[p.id].r.qty, false), false]);
+      [250, 500].forEach(function (q) { sc.push([q + ' units by sea', scen(p, q, true), true]); });
+      var fq = fillQty(p); if (fq > 0) sc.push(['Fills the ' + m3(n(S.settings.lcl.min)) + ' (' + fq + ' units)', scen(p, fq, true), true]);
+    }
+    var sbody = sc.map(function (s, i) {
+      return '<tr class="' + (i === 0 ? 'hl' : '') + '"><td>' + s[0] + '</td><td class="num">' + (s[2] ? Math.round(s[1].fill * 100) + '%' : '-') + '</td><td class="num">' + usd(s[1].r.freight / Math.max(1, s[1].qty)) + '</td><td class="num">' + usd(s[1].r.perUnitNet) + '</td><td class="num ' + (s[1].pl.profit >= 0 ? 'pos' : 'neg') + '">' + clp(s[1].pl.profit) + '</td></tr>';
+    }).join('');
+    var uv = S.sumView !== 'total', byValue = S.settings.lcl.split === 'value';
+    var rowsS = '', tU = 0, tG = 0, tF = 0, tNet = 0, tRev = 0, tRrp = 0, tAds = 0, tGross = 0;
+    function cells(q, goods, frt, net, gross, netp, roas, tot, rev) {
+      var d = tot ? 1 : Math.max(1, q);
+      return '<td class="num">' + usd(goods / d) + '</td><td class="num">' + usd(frt / d) + '</td><td class="num">' + usd(net / d) + '</td><td class="num">' + (roas > 0 ? roas.toFixed(1) : '-') + '</td>' +
+        '<td class="num ' + (gross >= 0 ? 'pos' : 'neg') + '">' + clp(gross / d) + ' <span style="font-size:12px">· ' + (rev > 0 ? pct(gross / rev) : '-') + '</span></td><td class="num ' + (netp >= 0 ? 'pos' : 'neg') + '">' + clp(netp / d) + ' <span style="font-size:12px">· ' + (rev > 0 ? pct(netp / rev) : '-') + '</span></td>';
+    }
+    S.products.forEach(function (x, i) {
+      var c2 = CACHE[x.id], r2 = c2.r, q2 = r2.qty, on = x.sim.lcl === true;
+      var nameCell = '<span style="display:inline-flex;align-items:center;gap:8px"><input type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)" data-ship="' + esc(x.id) + '"' + (on ? ' checked' : '') + ' aria-label="In shipment: ' + esc(x.name) + '"><span class="dotc" style="background:' + COLORS[i % COLORS.length] + '"></span><button type="button" class="lnk" data-open="' + esc(x.id) + '" title="Open details">' + esc(x.name) + '</button></span>';
+      if (!on) { rowsS += '<tr style="opacity:.65"><td>' + nameCell + '</td><td class="num">' + q2 + '</td><td colspan="6" class="mut" style="text-align:left">Not in this shipment. Tick the box to add it.</td></tr>'; return; }
+      tU += q2; tG += r2.goods; tF += r2.freight; tNet += r2.net; tRev += c2.pl.netRev * q2;
+      tRrp += c2.pl.rrp * q2; tAds += c2.pl.ads * q2; tGross += c2.pl.contribPre * q2;
+      rowsS += '<tr><td>' + nameCell + '</td><td class="num">' + q2 + '</td>' +
+        cells(q2, r2.goods, r2.freight, r2.net, c2.pl.contribPre * q2, c2.pl.profit * q2, c2.pl.roas, !uv, c2.pl.netRev * q2) + '</tr>';
     });
-    $('dup').addEventListener('click', function () {
-      var p = cur(); var c = normProduct(JSON.parse(JSON.stringify(p)));
-      c.id = 'p_' + uid(); c.name = (p.name || 'Product') + ' copy'; c.created = Date.now();
-      S.products.push(c); S.active = c.id; touch(c); renderTabs(); fillForm(c); renderOutputs();
-    });
-    var delTimer = null;
-    $('del').addEventListener('click', function () {
-      var b = $('del');
-      if (b.getAttribute('data-confirm') !== '1') {
-        b.setAttribute('data-confirm', '1'); b.textContent = 'Click again to delete';
-        clearTimeout(delTimer);
-        delTimer = setTimeout(function () { b.removeAttribute('data-confirm'); b.textContent = 'Delete'; }, 3500);
-        return;
-      }
-      clearTimeout(delTimer);
-      var p = cur();
+    var summary = '<div class="card tablewrap"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Container summary</h3>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<div class="seg" role="radiogroup" aria-label="Freight split"><button type="button" role="radio" data-split="space" aria-checked="' + !byValue + '" title="What the forwarder invoices">Freight by space</button><button type="button" role="radio" data-split="value" aria-checked="' + byValue + '" title="What-if: freight in proportion to goods value">Freight by value</button></div>' +
+      '<div class="seg" role="radiogroup" aria-label="View"><button type="button" role="radio" data-sum="unit" aria-checked="' + uv + '">Unit view</button><button type="button" role="radio" data-sum="total" aria-checked="' + !uv + '">Total view</button></div></div></div>' + (inShip.length ?
+      '<table class="t"><thead><tr><th>Product</th><th>Units</th><th>Goods cost</th><th>Freight</th><th>Net cost</th><th>ROAS</th><th>Gross profit</th><th>Net profit</th></tr></thead><tbody>' + rowsS +
+      '<tr class="tot"><td>Total</td><td class="num">' + tU + '</td>' + cells(tU, tG, tF, tNet, tGross, contrib, tAds > 0 ? tRrp / tAds : 0, !uv, tRev) + '</tr></tbody></table>' +
+      '<p class="note" style="margin:10px 0 0">' + (uv ? 'Per unit.' : 'Totals for all units.') + ' Costs in US$, profits in CLP. Gross profit is before ads, net profit after ads, and the % is the share of net sales (price without IVA). ' +
+      (byValue ? 'Freight is split by goods value, a what-if view. The forwarder invoices by space.' : 'Freight is split by space, as the forwarder invoices it.') + ' The shared agent is split by goods value.</p>' :
+      '<p class="note" style="margin:0">No product is marked "In shipment" yet.</p>') + '</div>';
+    return '<div class="grid2" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)"><div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><h3 style="margin:0">' + m3(billed) + ' you pay for</h3><span class="num"><b>' + m3(used) + '</b> used · ' + Math.round(fill * 100) + '%</span></div>' +
+      '<div class="cont" role="img" aria-label="Container ' + Math.round(fill * 100) + ' percent full" style="margin-top:12px">' + seg + '<div class="empty">' + (fill < 1 ? Math.round((1 - fill) * 100) + '% empty, already paid' : 'Full') + '</div></div>' +
+      '<div class="legend">' + leg + (more > 0 && fill < 1 ? '<span>Room for about ' + more + ' more of "' + esc(p.name) + '"</span>' : '') + '</div></div>' +
+      '<div class="dark"><span style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#98A2B3;font-weight:600">This shipment</span>' +
+      '<div class="r" style="align-items:baseline"><span>Cash you need</span><b style="font-size:22px">' + usd(cash) + '</b></div>' +
+      '<div class="r"><span>of which IVA, comes back as credit</span><b>' + usd(iva) + '</b></div>' +
+      '<div class="r t" style="align-items:baseline"><span>Total net profit</span><b style="font-size:22px;color:' + (contrib >= 0 ? '#4BE3A0' : '#FDBA74') + '">' + clp(contrib) + '</b></div></div></div>' +
+      summary +
+      '<div class="card tablewrap"><h3>How order size changes "' + esc(p.name) + '"</h3><table class="t"><thead><tr><th>Scenario</th><th>Container used</th><th>Freight / unit</th><th>Net cost / unit</th><th>Profit / unit</th></tr></thead><tbody>' + sbody + '</tbody></table>' +
+      (unitCbm(p) > 0 ? '' : '<p class="note">Enter the carton size to see these scenarios.</p>') + '</div>';
+  }
+
+  function renderView() {
+    var p = cur(), c = CACHE[p.id];
+    var f = { overview: vOverview, cost: vCost, pl: vPL, channels: vChannels, ship: vShip }[S.tab] || vOverview;
+    var html = f(p, c);
+    $('view').innerHTML = '<div style="display:flex;flex-direction:column;gap:16px">' + html + '</div>';
+  }
+
+  function refresh(skipForm) {
+    recompute(); renderList(); renderKpis(); renderTabs(); renderView();
+    if (!formBuilt) buildForm();
+    if (!skipForm) fillForm(); else applyVis();
+    showView(true);
+  }
+  function changed(skipForm) { save(); refresh(skipForm); }
+
+  /* ===== events ===== */
+  $('form').addEventListener('input', function (e) {
+    var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
+    if (!k) return;
+    var v = el.type === 'checkbox' ? el.checked : el.value;
+    setVal(k, v);
+    if (k === 'p.mk') { changed(false); return; }
+    changed(true);
+  });
+  $('form').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mode]');
+    if (!b) return;
+    cur().sim.lcl = b.getAttribute('data-mode') === 'sea';
+    changed(false);
+  });
+  $('plist').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-id]'); if (!b) return;
+    S.active = b.getAttribute('data-id'); changed(false);
+  });
+  $('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tab]'); if (!b) return;
+    S.tab = b.getAttribute('data-tab'); save(); renderTabs(); renderView();
+  });
+  $('view').addEventListener('change', function (e) {
+    var id = e.target.getAttribute && e.target.getAttribute('data-ship');
+    if (!id) return;
+    S.products.forEach(function (x) { if (x.id === id) x.sim.lcl = e.target.checked; });
+    changed(false);
+  });
+  $('view').addEventListener('click', function (e) {
+    var sp = e.target.closest('[data-split]');
+    if (sp) { S.settings.lcl.split = sp.getAttribute('data-split'); changed(true); return; }
+    var sv = e.target.closest('[data-sum]');
+    if (sv) { S.sumView = sv.getAttribute('data-sum'); save(); renderView(); return; }
+    var o = e.target.closest('[data-open]');
+    if (o) { S.active = o.getAttribute('data-open'); S.tab = 'overview'; changed(false); window.scrollTo(0, 0); return; }
+    if (e.target.closest('[data-add]')) addProduct();
+  });
+  function addProduct() {
+    var p = blankProduct('New product'); p.sim.lcl = true; p.sim.qty = '50';
+    S.products.push(p); S.active = p.id; changed(false);
+  }
+  $('btnAdd').addEventListener('click', addProduct);
+  $('btnDup').addEventListener('click', function () {
+    var p = JSON.parse(JSON.stringify(cur())); p.id = 'p_' + uid(); p.name += ' (copy)';
+    S.products.push(p); S.active = p.id; changed(false);
+  });
+  $('btnDel').addEventListener('click', function () {
+    var p = cur(), name = p.name;
+    ask('Delete "' + name + '"? This cannot be undone.', 'Delete', function () {
       S.products = S.products.filter(function (x) { return x.id !== p.id; });
-      clearTimeout(timers[p.id]); delete timers[p.id];
-      removeStored(p.id);
-      if (!S.products.length) { var nb = blankProduct('New product'); S.products.push(nb); touch(nb); }
-      b.removeAttribute('data-confirm'); b.textContent = 'Delete';
-      S.active = S.products[0].id;
-      renderTabs(); fillForm(cur()); renderOutputs();
+      if (!S.products.length) { var b = blankProduct('New product'); b.sim.lcl = true; b.sim.qty = '50'; S.products.push(b); }
+      S.active = S.products[0].id; changed(false); toast('Deleted "' + name + '"');
     });
+  });
+  $('btnReset').addEventListener('click', function () {
+    var sh = mode === 'shared';
+    ask(sh ? 'Replace the products and settings of ' + PROFILES[profile] + ' with the baseline, 30 pumps by sea? Both of you will see this. Shared ideas are not touched.' : 'Replace everything in this browser (products and ideas) with the baseline, 30 pumps by sea?', 'Reset', function () {
+      var bl = baseline(); S.products = bl.products; S.settings = bl.settings; S.active = bl.active;
+      if (!sh) S.ideas = [];
+      formBuilt = false; changed(false); toast('Reset to baseline');
+    });
+  });
+  $('btnExport').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'import-simulator-v2-data.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  $('btnImport').addEventListener('click', function () { $('fileIn').click(); });
+  $('fileIn').addEventListener('change', function () {
+    var f = this.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var n2;
+      try { n2 = normState(JSON.parse(rd.result)); } catch (e) { toast('That file is not valid data.'); return; }
+      var sh = mode === 'shared';
+      ask(sh ? 'Importing replaces the products and settings of ' + PROFILES[profile] + ' for both of you. Shared ideas are not touched. Continue?' : 'Importing replaces everything in this browser. Continue?', 'Import', function () {
+        if (sh) { S.products = n2.products; S.settings = n2.settings; S.active = n2.active; }
+        else { S = n2; }
+        formBuilt = false; changed(false); toast('Data imported');
+      });
+    };
+    rd.readAsText(f); this.value = '';
+  });
+  var menuEl = $('menu'), menuBtn = $('btnMenu');
+  function closeMenu() { menuEl.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); }
+  menuBtn.addEventListener('click', function (e) { e.stopPropagation(); menuEl.hidden = !menuEl.hidden; menuBtn.setAttribute('aria-expanded', String(!menuEl.hidden)); });
+  menuEl.addEventListener('click', function () { setTimeout(closeMenu, 0); });
+  document.addEventListener('click', function (e) { if (!menuEl.hidden && !menuEl.contains(e.target)) closeMenu(); });
+  $('modalYes').addEventListener('click', function () { var fn = modalFn; closeModal(); if (fn) fn(); });
+  $('modalNo').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('modal').hidden) closeModal(); $('lightbox').hidden = true; closeMenu(); } });
+  function theme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('importsim.v2.theme', t); } catch (e) {} }
+  $('btnTheme').addEventListener('click', function () { theme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
+  (function () { var t = null; try { t = localStorage.getItem('importsim.v2.theme'); } catch (e) {} theme(t || 'dark'); })();
 
-    /* links */
-    function normUrl(s) {
-      s = (s || '').trim();
-      if (!s) return null;
-      if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
-      try { var u = new URL(s); return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null; } catch (e) { return null; }
+
+  /* ===== ideas (shared block in the published version) ===== */
+  var STAT = [['idea', 'Idea'], ['investigating', 'Investigating'], ['test', 'Worth testing'], ['discarded', 'Discarded']];
+  var ideaFilter = { status: '', author: '' };
+  function safeUrl(u) { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; }
+  function fdateTime(t) { try { return new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function fdate(t) { try { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } }
+  function satLevel(v) {
+    if (String(v === undefined ? '' : v).trim() === '') return null;
+    var x = n(v), lo = n(S.settings.sat.low), hi = n(S.settings.sat.high);
+    return x < lo ? ['Low saturation', 'pos'] : x <= hi ? ['Medium saturation', 'warnc'] : ['High saturation', 'neg'];
+  }
+  function checksDone(i) { return (i.exists === 'yes' || i.exists === 'no' ? 1 : 0) + (String(i.price || '').trim() !== '' ? 1 : 0) + (String(i.listings || '').trim() !== '' ? 1 : 0); }
+  function ideaMeta(i) {
+    var d = checksDone(i), sat = satLevel(i.listings), h = '';
+    h += '<span class="pill ' + (d === 3 ? 'pos' : 'mut') + '">' + (d === 3 ? 'Validated' : d + ' of 3 checks') + '</span>';
+    if (i.exists === 'no') h += '<span class="pill neg">Not sold in Chile yet</span>';
+    if (i.exists === 'yes') h += '<span class="pill">Sold in Chile</span>';
+    if (sat) h += '<span class="pill ' + sat[1] + '">' + sat[0] + '</span>';
+    return h;
+  }
+  function searchLinks(i) {
+    var q = encodeURIComponent(i.name || '');
+    return '<a href="https://listado.mercadolibre.cl/' + encodeURIComponent((i.name || '').trim().replace(/\s+/g, '-')) + '" target="_blank" rel="noopener">Search Mercado Libre</a> · ' +
+      '<a href="https://www.falabella.com/falabella-cl/search?Ntt=' + q + '" target="_blank" rel="noopener">Search Falabella</a>';
+  }
+  function ideaCard(i) {
+    var u = safeUrl(i.link);
+    return '<article class="icard" data-card="' + esc(i.id) + '"><div class="hd"><h4>' + esc(i.name) + '</h4>' +
+      '<select data-i="' + esc(i.id) + '" data-f="status" aria-label="Status" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px;min-height:36px">' +
+      STAT.map(function (x) { return '<option value="' + x[0] + '"' + (i.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="note">Added by <b style="color:var(--text)">' + esc(i.author) + '</b> on ' + fdate(i.created) + (i.editedBy ? ' · last edit by ' + esc(i.editedBy) + ' on ' + fdate(i.updated) : '') + '</div>' +
+      (u ? '<div class="note"><a href="' + esc(u) + '" target="_blank" rel="noopener">Reference link</a></div>' : '') +
+      '<div class="meta" id="meta_' + esc(i.id) + '">' + ideaMeta(i) + '</div>' +
+      '<div class="chk3">' +
+      '<div class="c"><span class="dot' + (i.exists === 'yes' || i.exists === 'no' ? ' ok' : '') + '" data-dot="exists"></span><label class="f"><span>1. Does it exist in Chile?</span><select data-i="' + esc(i.id) + '" data-f="exists"><option value="unknown"' + (i.exists === 'unknown' ? ' selected' : '') + '>Not checked</option><option value="yes"' + (i.exists === 'yes' ? ' selected' : '') + '>Yes, already sold</option><option value="no"' + (i.exists === 'no' ? ' selected' : '') + '>No, nobody sells it</option></select></label></div>' +
+      '<div class="c"><span class="dot' + (String(i.price || '').trim() ? ' ok' : '') + '" data-dot="price"></span><label class="f"><span>2. Typical market price (CLP, incl. IVA)</span><input type="text" inputmode="numeric" data-i="' + esc(i.id) + '" data-f="price" value="' + esc(i.price || '') + '" placeholder="e.g. 24990"></label></div>' +
+      '<div class="c"><span class="dot' + (String(i.listings || '').trim() ? ' ok' : '') + '" data-dot="listings"></span><label class="f"><span>3. Listings found (saturation)</span><input type="text" inputmode="numeric" data-i="' + esc(i.id) + '" data-f="listings" value="' + esc(i.listings || '') + '" placeholder="e.g. 120"></label></div></div>' +
+      '<label class="f"><span>Notes, source of the price, competitors</span><textarea data-i="' + esc(i.id) + '" data-f="notes">' + esc(i.notes || '') + '</textarea></label>' +
+      '<div class="note">' + searchLinks(i) + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn pri" data-act="tosim" data-id="' + esc(i.id) + '">Simulate it</button><button type="button" class="btn danger" data-act="del" data-id="' + esc(i.id) + '">Delete</button></div></article>';
+  }
+  function renderIdeas() {
+    var el = $('appIdeas'), list = S.ideas.filter(function (i) {
+      return (!ideaFilter.status || i.status === ideaFilter.status) && (!ideaFilter.author || i.author === ideaFilter.author);
+    });
+    list.sort(function (a, b) { return b.created - a.created; });
+    el.innerHTML =
+      '<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><h3 style="margin:0">New idea to investigate</h3>' +
+      (mode === 'shared' ? '<div class="note">Signed in as <b style="color:var(--text)">' + esc(S.me) + '</b>. Everything you write here is shared with both of you.</div></div>' :
+      '<div style="display:flex;align-items:center;gap:8px"><span class="note">You are</span><div class="seg" role="radiogroup" aria-label="Who is writing">' +
+      ['André', 'Agustín'].map(function (w) { return '<button type="button" role="radio" data-act="me" data-who="' + w + '" aria-checked="' + (S.me === w) + '" style="padding:8px 14px">' + w + '</button>'; }).join('') + '</div></div></div>') +
+      '<div class="row"><label class="f"><span>Product or idea</span><input type="text" id="ideaName" placeholder="e.g. Portable tire inflator"></label>' +
+      '<label class="f"><span>Reference link (optional)</span><input type="text" id="ideaLink" placeholder="https://..."></label>' +
+      '<label class="f" style="flex-basis:100%"><span>Why could it work? (optional)</span><textarea id="ideaNotes" style="min-height:60px"></textarea></label>' +
+      '<button type="button" class="btn pri" data-act="add">Add idea</button></div></div>' +
+      '<div class="row"><label class="f" style="flex:0 1 180px"><span>Status</span><select id="fStatus"><option value="">All</option>' + STAT.map(function (x) { return '<option value="' + x[0] + '"' + (ideaFilter.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label>' +
+      '<label class="f" style="flex:0 1 180px"><span>Written by</span><select id="fAuthor"><option value="">Both</option><option' + (ideaFilter.author === 'André' ? ' selected' : '') + '>André</option><option' + (ideaFilter.author === 'Agustín' ? ' selected' : '') + '>Agustín</option></select></label>' +
+      '<details class="grp" style="flex:1 1 320px"><summary>Saturation scale<span class="hint">low under ' + esc(S.settings.sat.low) + ', high over ' + esc(S.settings.sat.high) + ' listings</span></summary><div class="fields"><label class="f"><span>Low if fewer than</span><input type="text" inputmode="numeric" data-sat="low" value="' + esc(S.settings.sat.low) + '"></label><label class="f"><span>High if more than</span><input type="text" inputmode="numeric" data-sat="high" value="' + esc(S.settings.sat.high) + '"></label><p class="note wide">These two numbers are a starting guess, not a rule. Adjust them to how many listings feel crowded in the categories you look at.</p></div></details></div>' +
+      (list.length ? '<div class="igrid">' + list.map(ideaCard).join('') + '</div>' : '<div class="card note">' + (S.ideas.length ? 'No ideas match these filters.' : 'No ideas yet. Write the first one above.') + '</div>');
+    var cnt = $('ideaCount'); if (cnt) cnt.textContent = S.ideas.length ? '(' + S.ideas.length + ')' : '';
+  }
+  function showView(rerender) {
+    var ideas = S.view === 'ideas';
+    $('appSim').hidden = ideas; $('appIdeas').hidden = !ideas;
+    document.querySelectorAll('#viewSw [data-view]').forEach(function (b) { b.setAttribute('aria-checked', String((b.getAttribute('data-view') === 'ideas') === ideas)); });
+    var cnt = $('ideaCount'); if (cnt) cnt.textContent = S.ideas.length ? '(' + S.ideas.length + ')' : '';
+    if (ideas && rerender) renderIdeas();
+  }
+  $('viewSw').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-view]'); if (!b) return;
+    S.view = b.getAttribute('data-view'); save(); showView(true);
+  });
+  function ideaById(id) { for (var i = 0; i < S.ideas.length; i++) if (S.ideas[i].id === id) return S.ideas[i]; return null; }
+  $('appIdeas').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var act = b.getAttribute('data-act');
+    if (act === 'me') { S.me = b.getAttribute('data-who'); save(); renderIdeas(); return; }
+    if (act === 'add') {
+      var name = $('ideaName').value.trim();
+      if (!name) { $('ideaName').focus(); return; }
+      S.ideas.push({ id: 'i_' + uid(), name: name, link: $('ideaLink').value.trim(), notes: $('ideaNotes').value.trim(), author: S.me, created: Date.now(), updated: Date.now(), editedBy: '',
+        status: 'idea', exists: 'unknown', price: '', listings: '' });
+      save(); renderIdeas(); return;
     }
-    function addLink() {
-      var u = normUrl($('f-link').value);
-      if (!u) return;
-      var p = cur(); p.links.push({ url: u }); $('f-link').value = ''; touch(p); renderLinks();
+    var i = ideaById(b.getAttribute('data-id')); if (!i) return;
+    if (act === 'del') {
+      ask('Delete the idea "' + i.name + '"? This cannot be undone.', 'Delete', function () {
+        S.ideas = S.ideas.filter(function (x) { return x.id !== i.id; }); save(); renderIdeas(); toast('Idea deleted');
+      });
+      return;
     }
-    $('addLink').addEventListener('click', addLink);
-    $('f-link').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addLink(); } });
-    $('links').addEventListener('click', function (e) {
-      var b = e.target.closest ? e.target.closest('.x') : null;
-      if (!b) return;
-      var p = cur(); p.links.splice(parseInt(b.getAttribute('data-i'), 10), 1); touch(p); renderLinks();
-    });
-
-    /* photos */
-    $('photos').addEventListener('click', function (e) {
-      var rm = e.target.closest ? e.target.closest('.x') : null;
-      var op = e.target.closest ? e.target.closest('.open') : null;
-      var p = cur();
-      if (rm) { p.photos.splice(parseInt(rm.getAttribute('data-i'), 10), 1); touch(p); renderPhotos(); return; }
-      if (op) {
-        var ph = p.photos[parseInt(op.getAttribute('data-i'), 10)];
-        $('lightbox').querySelector('img').src = photoSrc(ph);
-        $('lightbox').hidden = false;
-      }
-    });
-    $('lightbox').addEventListener('click', function () { $('lightbox').hidden = true; });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('lightbox').hidden = true; });
-    $('f-photo').addEventListener('change', function () { addPhotos(Array.prototype.slice.call($('f-photo').files)); $('f-photo').value = ''; });
-    var drop = $('drop');
-    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
-    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
-    drop.addEventListener('drop', function (e) {
-      var fl = e.dataTransfer ? Array.prototype.slice.call(e.dataTransfer.files) : [];
-      addPhotos(fl);
-    });
-    document.addEventListener('paste', function (e) {
-      var items = e.clipboardData && e.clipboardData.items;
-      if (!items) return;
-      var files = [];
-      for (var i = 0; i < items.length; i++) {
-        if (items[i].kind === 'file' && items[i].type.indexOf('image/') === 0) { var f = items[i].getAsFile(); if (f) files.push(f); }
-      }
-      if (files.length) { e.preventDefault(); addPhotos(files); }
-    });
-
-    /* marketplace settings */
-    $('mkbody').addEventListener('input', function (e) {
-      var inp = e.target; var tr = inp.closest('tr'); if (!tr) return;
-      var m = S.settings.mk[parseInt(tr.getAttribute('data-i'), 10)]; if (!m) return;
-      var k = inp.getAttribute('data-k');
-      m[k] = inp.value;
-      if (k !== 'name' && (!m.verified || m.official)) {
-        m.verified = true; m.official = false; tr.querySelector('.vb').innerHTML = '<span class="badge">edited</span>';
-      }
-      touchSettings();
-      if (k === 'name') { var keep = $('f-mk').value; refreshMkSelect(); $('f-mk').value = keep; }
-      renderOutputs();
-    });
-    $('mkbody').addEventListener('click', function (e) {
-      var b = e.target.closest ? e.target.closest('[data-del]') : null;
-      if (!b || S.settings.mk.length <= 1) return;
-      var tr = b.closest('tr');
-      S.settings.mk.splice(parseInt(tr.getAttribute('data-i'), 10), 1);
-      touchSettings(); renderMkEditor(); refreshMkSelect(); renderOutputs();
-    });
-    $('mkAdd').addEventListener('click', function () {
-      S.settings.mk.push({ id: 'm_' + uid(), name: 'New marketplace', commission: 0, fixed: 0, ship: 0, verified: false });
-      touchSettings(); renderMkEditor(); refreshMkSelect(); renderOutputs();
+    if (act === 'tosim') {
+      var p = blankProduct(i.name); p.sim.lcl = true; p.sim.qty = '50';
+      var pr = String(i.price || '').replace(/\D/g, ''); if (pr) p.pl.rrp = pr;
+      p.notes = (safeUrl(i.link) ? i.link + '\n' : '') + (i.notes || '') + '\nIdea by ' + i.author + '. Listings found: ' + (i.listings || 'not checked') + '.';
+      S.products.push(p); S.active = p.id; S.tab = 'overview'; S.view = 'sim';
+      if (i.status === 'idea') i.status = 'investigating';
+      changed(false); window.scrollTo(0, 0);
+    }
+  });
+  function ideaInput(e) {
+    var el = e.target, id = el.getAttribute && el.getAttribute('data-i');
+    if (el.getAttribute && el.getAttribute('data-sat')) { S.settings.sat[el.getAttribute('data-sat')] = el.value; save(); document.querySelectorAll('.meta').forEach(function (m) { var i2 = ideaById(m.id.slice(5)); if (i2) m.innerHTML = ideaMeta(i2); }); return; }
+    if (el.id === 'fStatus') { ideaFilter.status = el.value; renderIdeas(); return; }
+    if (el.id === 'fAuthor') { ideaFilter.author = el.value; renderIdeas(); return; }
+    if (!id) return;
+    var i = ideaById(id); if (!i) return;
+    var f = el.getAttribute('data-f');
+    i[f] = el.value; i.editedBy = S.me; i.updated = Date.now(); save();
+    var card = el.closest('.icard');
+    $('meta_' + id).innerHTML = ideaMeta(i);
+    ['exists', 'price', 'listings'].forEach(function (k) {
+      var ok = k === 'exists' ? (i.exists === 'yes' || i.exists === 'no') : String(i[k] || '').trim() !== '';
+      var d = card.querySelector('[data-dot="' + k + '"]'); if (d) d.classList.toggle('ok', ok);
     });
   }
+  $('appIdeas').addEventListener('input', ideaInput);
+  $('appIdeas').addEventListener('change', function (e) { if (e.target.tagName === 'SELECT') ideaInput(e); });
 
-  /* ---------- photos ---------- */
-  var assetsNs;
-  function getAssets() {
-    if (assetsNs !== undefined) return Promise.resolve(assetsNs);
-    if (!window.claude || !window.claude.use) { assetsNs = null; return Promise.resolve(null); }
-    return window.claude.use('assets').then(function (a) { assetsNs = a || null; return assetsNs; }, function () { assetsNs = null; return null; });
-  }
+  /* ===== photos ===== */
   function shrink(file, max, q) {
     return new Promise(function (resolve, reject) {
-      var url = URL.createObjectURL(file);
-      var img = new Image();
+      var url = URL.createObjectURL(file), img = new Image();
       img.onload = function () {
-        var sc = Math.min(1, max / Math.max(img.width, img.height));
-        var c = document.createElement('canvas');
+        var sc = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
         c.width = Math.max(1, Math.round(img.width * sc)); c.height = Math.max(1, Math.round(img.height * sc));
         var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
         URL.revokeObjectURL(url);
@@ -1451,156 +1115,202 @@ window.FIREBASE_CONFIG = {
       img.src = url;
     });
   }
-  function blobToDataUrl(b) {
-    return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b); });
+  function blobToDataUrl(b) { return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b); }); }
+  function renderPhotos() {
+    var el = $('photoList'); if (!el) return;
+    var p = cur();
+    el.innerHTML = (p.photos || []).map(function (ph, i) {
+      if (!ph || typeof ph.data !== 'string' || ph.data.indexOf('data:image/') !== 0) return '';
+      return '<span class="ph"><button type="button" class="phb" data-ph="' + i + '" aria-label="Enlarge photo ' + (i + 1) + '"><img alt="Reference photo ' + (i + 1) + '" src="' + esc(ph.data) + '"></button><button type="button" class="phx" data-phdel="' + i + '" aria-label="Remove photo ' + (i + 1) + '">×</button></span>';
+    }).join('');
   }
   function addPhotos(files) {
     var p = cur();
-    files = files.filter(function (f) { return f && f.type && f.type.indexOf('image/') === 0; });
+    files = files.filter(function (x) { return x && x.type && x.type.indexOf('image/') === 0; });
     if (!files.length) return;
     $('photoMsg').textContent = 'Adding ' + files.length + (files.length > 1 ? ' photos...' : ' photo...');
     var failed = 0;
-    files.reduce(function (pr, f) {
-      return pr.then(function () {
-        return getAssets().then(function (as) {
-          if (as) {
-            return shrink(f, 1400, 0.85).then(function (b) { return as.upload(b, { type: 'image/jpeg' }); })
-              .then(function (res) { p.photos.push({ id: res.id }); }, function () {
-                return shrink(f, 640, 0.6).then(blobToDataUrl).then(function (d) { p.photos.push({ data: d }); });
-              });
-          }
-          return shrink(f, 640, 0.6).then(blobToDataUrl).then(function (d) { p.photos.push({ data: d }); });
-        }).then(null, function () { failed++; });
-      });
+    files.reduce(function (pr, file) {
+      return pr.then(function () { return shrink(file, 800, 0.7).then(blobToDataUrl).then(function (d) { p.photos.push({ data: d }); }, function () { failed++; }); });
     }, Promise.resolve()).then(function () {
       $('photoMsg').textContent = failed ? failed + ' file(s) could not be added.' : '';
-      touch(p);
-      if (cur() === p) renderPhotos();
+      save(); if (cur() === p) renderPhotos();
     });
   }
+  $('form').addEventListener('change', function (e) { if (e.target.id === 'photoIn') { addPhotos(Array.prototype.slice.call(e.target.files)); e.target.value = ''; } });
+  $('form').addEventListener('click', function (e) {
+    var big = e.target.closest('[data-ph]'), del = e.target.closest('[data-phdel]');
+    if (big) { var ph = cur().photos[+big.getAttribute('data-ph')]; if (ph && ph.data) { $('lightbox').querySelector('img').src = ph.data; $('lightbox').hidden = false; } }
+    if (del) { var idx = +del.getAttribute('data-phdel'); ask('Remove this photo?', 'Remove', function () { cur().photos.splice(idx, 1); save(); renderPhotos(); }); }
+  });
+  $('lightbox').addEventListener('click', function () { $('lightbox').hidden = true; });
 
-  /* ---------- start ---------- */
-  bindInputs();
-  /* Save pending edits right away when the page is hidden or closed, instead of waiting for the 0.6 s debounce. */
-  function flushPending() {
-    if (mode === 'local') {
-      if (Object.keys(timers).length || settingsTimer) {
-        Object.keys(timers).forEach(function (id) { clearTimeout(timers[id]); delete timers[id]; });
-        clearTimeout(settingsTimer); settingsTimer = null;
-        saveLocal();
-      }
-      return;
-    }
-    if (mode === 'db') {
-      Object.keys(timers).forEach(function (id) {
-        clearTimeout(timers[id]); delete timers[id];
-        var p = S.products.filter(function (x) { return x.id === id; })[0];
-        if (p) flush(p);
-      });
-      if (settingsTimer) { clearTimeout(settingsTimer); settingsTimer = null; flushSettings(); }
-    }
-  }
-  window.addEventListener('pagehide', flushPending);
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flushPending(); });
-  setStatus('wait');
-  renderTabs(); fillSettingsForm(); renderMkEditor(); fillForm(cur()); renderOutputs();
-
-  function initStorage() {
-    var cl = window.claude;
-    if (!cl || !cl.use) { finishLocal(); if (FB) initFirebase(); return; }
-    Promise.all([
-      cl.use('db').then(function (x) { return x; }, function () { return null; }),
-      cl.use('user').then(function (x) { return x; }, function () { return null; })
-    ]).then(function (res) {
-      var db = res[0], user = res[1];
-      if (!db || !user) { finishLocal(); return null; }
-      return user.id().then(function (id) {
-        if (!id) { finishLocal(); return; }
-        dbCol = db.collection('data/users/' + id);
-        mode = 'db';
-        loadTimer = setTimeout(function () { if (!loaded) setStatus('wait'); }, 10000);
-        dbCol.onSnapshot(onSnap, function () { setStatus('unsaved'); });
-      });
-    }).then(null, function () { finishLocal(); });
-  }
-  function finishLocal() {
-    mode = 'local';
-    if (loadLocal()) { renderTabs(); fillSettingsForm(); renderMkEditor(); fillForm(cur()); renderOutputs(); }
-    setStatus('local');
-  }
-  function renderAll() { renderTabs(); fillSettingsForm(); renderMkEditor(); fillForm(cur()); renderOutputs(); }
-
-  /* ---------- shared André / Agustín profiles (GitHub version only, Firebase) ----------
-     Each profile lives in workspaces/andre-agustin/profiles/<id>/items: one doc per product plus a "settings" doc,
-     the same shape as the Claude database, so the same save and sync code is reused.
-     Only the two emails below can read or write; the Firestore rules enforce the same list. */
+  /* ===== shared mode (Firebase, only in the GitHub build) =====
+     Each profile lives in workspaces/andre-agustin/profiles/<id>/items: one doc per product plus a "settings" doc.
+     Ideas live in workspaces/andre-agustin/ideas and are common to both profiles.
+     Only the two emails below can read or write; firestore.rules enforces the same list. */
   var FB = window.FIREBASE_CONFIG || null;
   var PROFILES = { andre: 'André', agustin: 'Agustín' };
   var ALLOWED = { 'antunes.de.diogo@gmail.com': 'andre', 'agustin.oelckers@gmail.com': 'agustin' };
-  var fbUser = null, fbUnsub = null, profile = null, fbDb = null;
+  var fbUser = null, fbDb = null, profile = null, who = null, itemsCol = null, ideasCol = null, unsubItems = null, unsubIdeas = null;
+  var syncTimer = null, lastItems = {}, lastIdeas = {}, lastSettings = '', loadedItems = false, seeded = false;
+
+  function canon(o) {
+    if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
+    if (o && typeof o === 'object') return '{' + Object.keys(o).sort().map(function (k) { return JSON.stringify(k) + ':' + canon(o[k]); }).join(',') + '}';
+    return JSON.stringify(o);
+  }
+  function canonP(p) { var c = Object.assign({}, p); delete c.updatedBy; delete c.updatedAt; return canon(c); }
   function allowedProfile(u) { return u && u.email ? ALLOWED[u.email.toLowerCase()] || null : null; }
   function prefProfile() { try { return localStorage.getItem('importsim.profile'); } catch (e) { return null; } }
 
+  function dirty() {
+    if (mode !== 'shared' || !loadedItems) return false;
+    var d = false;
+    S.products.forEach(function (p) { if (lastItems[p.id] !== canonP(p)) d = true; });
+    Object.keys(lastItems).forEach(function (id) { if (!S.products.some(function (p) { return p.id === id; })) d = true; });
+    if (canon(S.settings) !== lastSettings) d = true;
+    S.ideas.forEach(function (i) { if (lastIdeas[i.id] !== canon(i)) d = true; });
+    Object.keys(lastIdeas).forEach(function (id) { if (!S.ideas.some(function (i) { return i.id === id; })) d = true; });
+    return d;
+  }
+  function scheduleSync() {
+    if (!dirty()) return;
+    setStatus('saving'); clearTimeout(syncTimer); syncTimer = setTimeout(syncUp, 600);
+  }
+  function syncUp() {
+    syncTimer = null;
+    if (mode !== 'shared' || !loadedItems || !itemsCol) return;
+    var col = itemsCol, icol = ideasCol, ops = [], big = false;
+    S.products.forEach(function (p) {
+      var c = canonP(p);
+      if (lastItems[p.id] === c) return;
+      p.updatedBy = who; p.updatedAt = Date.now();
+      var data = JSON.parse(JSON.stringify(p));
+      if (JSON.stringify(data).length > 900000) { big = true; return; }
+      lastItems[p.id] = c; ops.push(col.doc(p.id).set(data));
+    });
+    Object.keys(lastItems).forEach(function (id) {
+      if (!S.products.some(function (p) { return p.id === id; })) { delete lastItems[id]; ops.push(col.doc(id).delete()); }
+    });
+    var sc = canon(S.settings);
+    if (sc !== lastSettings) { lastSettings = sc; ops.push(col.doc('settings').set(JSON.parse(JSON.stringify(S.settings)))); }
+    S.ideas.forEach(function (i) { var c = canon(i); if (lastIdeas[i.id] !== c) { lastIdeas[i.id] = c; ops.push(icol.doc(i.id).set(JSON.parse(JSON.stringify(i)))); } });
+    Object.keys(lastIdeas).forEach(function (id) {
+      if (!S.ideas.some(function (i) { return i.id === id; })) { delete lastIdeas[id]; ops.push(icol.doc(id).delete()); }
+    });
+    if (big) { setStatus('toobig'); return; }
+    if (formBuilt) applyVis();
+    Promise.all(ops).then(function () { if (!syncTimer) setStatus('saved'); }, function () { setStatus('unsaved'); });
+  }
+
+  function onItems(snap) {
+    var remote = {}, sdoc = null, ids;
+    snap.docs.forEach(function (d) {
+      var data = d.data(); if (!data) return;
+      if (d.id === 'settings') sdoc = data; else if (d.id.indexOf('p_') === 0) remote[d.id] = data;
+    });
+    ids = Object.keys(remote);
+    if (!ids.length) {
+      if (!snap.metadata.fromCache && !seeded) {
+        seeded = true; loadedItems = true; lastItems = {}; lastSettings = '';
+        S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed';
+        syncUp(); formBuilt = false; refresh(false);
+      }
+      return;
+    }
+    loadedItems = true;
+    var next = [], known = {};
+    ids.forEach(function (id) {
+      var loc = S.products.filter(function (x) { return x.id === id; })[0];
+      if (loc && lastItems[id] !== undefined && canonP(loc) !== lastItems[id]) { next.push(loc); return; } /* unsynced local edit wins */
+      if (!loc && lastItems[id] !== undefined) return; /* deleted here, delete still on its way */
+      var np = normProduct(remote[id]); next.push(np); lastItems[id] = canonP(np);
+    });
+    S.products.forEach(function (loc) { if (!remote[loc.id] && lastItems[loc.id] === undefined) next.push(loc); });
+    Object.keys(lastItems).forEach(function (id) { if (!remote[id]) delete lastItems[id]; });
+    next.sort(function (a, b) { return (a.created || 0) - (b.created || 0); });
+    S.products = next.length ? next : [seedProduct()];
+    if (!S.products.some(function (p) { return p.id === S.active; })) S.active = S.products[0].id;
+    var mkChanged = false;
+    if (sdoc && !(lastSettings && canon(S.settings) !== lastSettings)) {
+      var ns = normSettings(sdoc);
+      mkChanged = canon(ns.mk) !== canon(S.settings.mk);
+      S.settings = ns; lastSettings = canon(ns);
+    }
+    if (!snap.metadata.fromCache && !syncTimer) setStatus('saved');
+    if (mkChanged) formBuilt = false;
+    if (S.view === 'sim') {
+      var f = document.activeElement, typing = f && $('form').contains(f) && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName);
+      refresh(!!typing && !mkChanged);
+    } else { recompute(); showView(false); }
+  }
+  function onIdeas(snap) {
+    var remote = {};
+    snap.docs.forEach(function (d) { var data = d.data(); if (data && d.id.indexOf('i_') === 0) remote[d.id] = data; });
+    var next = [];
+    Object.keys(remote).forEach(function (id) {
+      var loc = S.ideas.filter(function (x) { return x.id === id; })[0];
+      if (loc && lastIdeas[id] !== undefined && canon(loc) !== lastIdeas[id]) { next.push(loc); return; }
+      if (!loc && lastIdeas[id] !== undefined) return;
+      var ni = normIdea(remote[id]); next.push(ni); lastIdeas[id] = canon(ni);
+    });
+    S.ideas.forEach(function (loc) { if (!remote[loc.id] && lastIdeas[loc.id] === undefined) next.push(loc); });
+    Object.keys(lastIdeas).forEach(function (id) { if (!remote[id]) delete lastIdeas[id]; });
+    S.ideas = next;
+    var f = document.activeElement, typing = f && $('appIdeas').contains(f) && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName);
+    if (S.view === 'ideas' && !typing) renderIdeas(); else showView(false);
+  }
+
   function renderWho() {
-    var ok = !!allowedProfile(fbUser);
-    var btns = document.querySelectorAll('#who .seg button');
+    var ok = !!allowedProfile(fbUser), btns = document.querySelectorAll('#who .seg button');
     for (var i = 0; i < btns.length; i++) {
       btns[i].disabled = !ok;
       btns[i].setAttribute('aria-checked', ok && btns[i].getAttribute('data-prof') === profile ? 'true' : 'false');
     }
-    $('authBtn').textContent = fbUser ? 'Sign out' : 'Sign in with Google';
+    $('btnAuth').textContent = fbUser ? 'Sign out' : 'Sign in with Google';
     $('authInfo').textContent = !fbUser
-      ? 'Sign in to see and edit the shared André and Agustín numbers. Until then, changes stay in this browser.'
-      : ok ? 'Signed in as ' + fbUser.email + '. Editing ' + PROFILES[profile] + '’s numbers, both of you see changes.'
+      ? 'Sign in to see and edit the shared André and Agustín numbers and ideas. Until then, changes stay in this browser.'
+      : ok ? 'Signed in as ' + fbUser.email + '. Editing ' + PROFILES[profile] + '’s numbers; both of you see the changes.'
       : fbUser.email + ' has no access to the shared numbers. Changes stay in this browser.';
   }
-
+  function flushSync() { if (syncTimer) { clearTimeout(syncTimer); syncUp(); } }
   function openProfile(pid) {
     if (!fbDb || !PROFILES[pid]) return;
-    if (mode === 'db' && profile === pid) return;
-    flushPending();
-    if (fbUnsub) { fbUnsub(); fbUnsub = null; }
-    profile = pid;
-    try { localStorage.setItem('importsim.profile', pid); } catch (e) { }
-    dbCol = fbDb.collection('workspaces/andre-agustin/profiles/' + pid + '/items');
-    mode = 'db'; shared = true; loaded = false; lastWritten = {}; lastSettings = ''; chain = {};
-    /* Placeholder until the profile loads; if the profile is empty it is seeded with this baseline. */
-    S = { products: [seedProduct()], settings: normSettings(), active: 'p_seed' };
-    var seeded = false;
-    var col = dbCol;
+    if (mode === 'shared' && profile === pid) return;
+    flushSync();
+    if (unsubItems) { unsubItems(); unsubItems = null; }
+    var firstOpen = mode !== 'shared';
+    profile = pid; who = PROFILES[allowedProfile(fbUser)];
+    try { localStorage.setItem('importsim.profile', pid); } catch (e) {}
+    itemsCol = fbDb.collection('workspaces/andre-agustin/profiles/' + pid + '/items');
+    mode = 'shared'; loadedItems = false; seeded = false; lastItems = {}; lastSettings = '';
+    S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed'; S.me = who;
+    if (firstOpen) { S.ideas = []; lastIdeas = {}; ideasCol = fbDb.collection('workspaces/andre-agustin/ideas'); }
     setStatus('wait');
-    clearTimeout(loadTimer);
-    loadTimer = setTimeout(function () { if (!loaded) setStatus('wait'); }, 10000);
-    fbUnsub = col.onSnapshot(function (snap) {
-      if (col !== dbCol) return;
-      if (!snap.metadata.fromCache && snap.empty && !seeded) {
-        seeded = true;
-        S.products.forEach(function (p) { flush(p); });
-        flushSettings();
-      }
-      onSnap(snap);
-    }, function (err) {
-      setStatus('unsaved');
-      $('authInfo').textContent = 'Could not open the shared numbers (' + (err && err.code ? err.code : 'error') + '). Check the Firestore rules.';
+    var col = itemsCol;
+    unsubItems = col.onSnapshot(function (snap) { if (col === itemsCol) onItems(snap); }, function (err) {
+      setStatus('unsaved'); $('authInfo').textContent = 'Could not open the shared numbers (' + (err && err.code ? err.code : 'error') + '). Check the Firestore rules.';
     });
-    renderAll(); renderWho();
+    if (firstOpen) unsubIdeas = ideasCol.onSnapshot(onIdeas, function () { setStatus('unsaved'); });
+    formBuilt = false; refresh(false); renderWho();
   }
-
   function leaveShared() {
-    if (fbUnsub) { fbUnsub(); fbUnsub = null; }
-    if (mode === 'db' && shared) {
-      dbCol = null; profile = null; shared = false; mode = 'local';
-      S = { products: [seedProduct()], settings: normSettings(), active: 'p_seed' };
-      loadLocal();
-      renderAll(); setStatus('local');
+    flushSync();
+    if (unsubItems) { unsubItems(); unsubItems = null; }
+    if (unsubIdeas) { unsubIdeas(); unsubIdeas = null; }
+    if (mode === 'shared') {
+      var d = load(); mode = 'local'; profile = null; who = null;
+      S.products = d.products; S.settings = d.settings; S.ideas = d.ideas; S.me = d.me;
+      S.active = S.products.some(function (p) { return p.id === S.active; }) ? S.active : S.products[0].id;
+      formBuilt = false; refresh(false); setStatus('local');
     }
   }
-
   function initFirebase() {
-    $('who').hidden = false;
+    if (!FB) return;
+    $('who').hidden = false; $('btnAuth').hidden = false;
     if (!window.firebase || !firebase.initializeApp) {
-      $('authInfo').textContent = 'The shared database did not load. Changes stay in this browser.';
-      $('authBtn').disabled = true; renderWho(); return;
+      $('authInfo').textContent = 'The shared database did not load. Changes stay in this browser.'; $('btnAuth').disabled = true; return;
     }
     try { firebase.initializeApp(FB); fbDb = firebase.firestore(); } catch (e) {
       $('authInfo').textContent = 'The shared database did not start. Changes stay in this browser.'; return;
@@ -1608,35 +1318,30 @@ window.FIREBASE_CONFIG = {
     firebase.auth().onAuthStateChanged(function (u) {
       fbUser = u;
       var own = allowedProfile(u);
-      if (own) {
-        var pref = prefProfile();
-        openProfile(PROFILES[pref] ? pref : own);
-      } else {
-        leaveShared();
-      }
+      if (own) { var pref = prefProfile(); openProfile(PROFILES[pref] ? pref : own); } else { leaveShared(); }
       renderWho();
     });
-    $('authBtn').addEventListener('click', function () {
-      if (fbUser) { flushPending(); firebase.auth().signOut(); return; }
+    $('btnAuth').addEventListener('click', function () {
+      if (fbUser) { flushSync(); firebase.auth().signOut(); return; }
       var provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       firebase.auth().signInWithPopup(provider).then(null, function (e) {
-        $('authInfo').textContent = e && e.code === 'auth/popup-blocked'
-          ? 'The sign-in window was blocked. Allow pop-ups for this page and try again.'
-          : 'Sign-in did not finish (' + (e && e.code ? e.code : 'error') + ').';
+        $('authInfo').textContent = e && e.code === 'auth/popup-blocked' ? 'The sign-in window was blocked. Allow pop-ups for this page and try again.' : 'Sign-in did not finish (' + (e && e.code ? e.code : 'error') + ').';
       });
     });
-    var seg = document.querySelector('#who .seg');
-    seg.addEventListener('click', function (e) {
+    document.querySelector('#who .seg').addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('button[data-prof]') : null;
       if (b && !b.disabled) openProfile(b.getAttribute('data-prof'));
     });
     renderWho();
   }
+  window.addEventListener('pagehide', flushSync);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flushSync(); });
 
-  initStorage();
+  refresh(false);
+  setStatus('local');
+  initFirebase();
 })();
 </script>
-
 </body>
 </html>
