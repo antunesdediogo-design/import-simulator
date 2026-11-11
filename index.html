@@ -160,6 +160,7 @@ details.adv[open]>summary::before{content:"- "}
 .lnk{background:none;border:0;padding:0;font-weight:600;text-align:left;text-decoration:underline dotted;text-underline-offset:3px;color:var(--text)}
 .lnk:hover{color:var(--accent)}
 .dotc{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.redlabel{margin:0;color:var(--bad);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .badge[data-s="unsaved"],.badge[data-s="toobig"]{color:var(--bad);border-color:var(--bad)}
 .badge[data-s="saving"],.badge[data-s="wait"]{color:var(--warn)}
 .photos{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
@@ -210,6 +211,7 @@ details.adv[open]>summary::before{content:"- "}
 
 <div class="app" id="appSim">
   <aside aria-label="Products and inputs">
+    <h2 class="redlabel">Fill in the product info</h2>
     <div id="who" hidden>
       <h2 class="sec">Numbers of</h2>
       <div class="seg" role="radiogroup" aria-label="Whose numbers" style="margin-top:8px"><button type="button" role="radio" data-prof="andre">André</button><button type="button" role="radio" data-prof="agustin">Agustín</button></div>
@@ -228,6 +230,7 @@ details.adv[open]>summary::before{content:"- "}
   </aside>
 
   <main>
+    <h2 class="redlabel">Summarized information</h2>
     <div class="kpis" id="kpis"></div>
     <div class="tabs" role="tablist" id="tabs"></div>
     <div id="view"></div>
@@ -976,9 +979,9 @@ window.FIREBASE_CONFIG = {
   $('modalNo').addEventListener('click', closeModal);
   $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) closeModal(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('modal').hidden) closeModal(); $('lightbox').hidden = true; closeMenu(); } });
-  function theme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('importsim.v2.theme', t); } catch (e) {} }
+  function theme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('importsim.v2.theme2', t); } catch (e) {} }
   $('btnTheme').addEventListener('click', function () { theme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
-  (function () { var t = null; try { t = localStorage.getItem('importsim.v2.theme'); } catch (e) {} theme(t || 'dark'); })();
+  (function () { var t = null; try { t = localStorage.getItem('importsim.v2.theme2'); } catch (e) {} theme(t || 'light'); })();
 
 
   /* ===== ideas (shared block in the published version) ===== */
