@@ -216,6 +216,7 @@ details.adv[open]>summary::before{content:"- "}
       <h2 class="sec">Numbers of</h2>
       <div class="seg" role="radiogroup" aria-label="Whose numbers" style="margin-top:8px"><button type="button" role="radio" data-prof="andre">André</button><button type="button" role="radio" data-prof="agustin">Agustín</button></div>
       <p class="note" id="authInfo" style="margin:8px 0 0"></p>
+      <button class="btn pri" id="btnSignIn" type="button" style="margin-top:8px;width:100%" hidden>Sign in with Google to share</button>
     </div>
     <div>
       <h2 class="sec">Products</h2>
@@ -487,7 +488,8 @@ window.FIREBASE_CONFIG = {
   }
   function save() { saveUI(); if (mode === 'shared') scheduleSync(); else saveLocalData(); }
   function setStatus(st) {
-    var m = { saved: mode === 'shared' ? 'Saved, shared' : 'Saved', saving: 'Saving...', local: 'Saved in this browser', unsaved: 'Not saved', wait: 'Connecting...', toobig: 'Not saved: too many photos' };
+    var FB = window.FIREBASE_CONFIG || null;
+    var m = { saved: mode === 'shared' ? 'Saved, shared' : 'Saved', saving: 'Saving...', local: FB ? 'Only in this browser, not shared' : 'Saved in this browser', unsaved: 'Not saved', wait: 'Connecting...', toobig: 'Not saved: too many photos' };
     var el = $('status'); if (!el) return;
     el.textContent = m[st] || ''; el.setAttribute('data-s', st);
   }
@@ -1272,8 +1274,9 @@ window.FIREBASE_CONFIG = {
       btns[i].setAttribute('aria-checked', ok && btns[i].getAttribute('data-prof') === profile ? 'true' : 'false');
     }
     $('btnAuth').textContent = fbUser ? 'Sign out' : 'Sign in with Google';
+    $('btnSignIn').hidden = !!fbUser;
     $('authInfo').textContent = !fbUser
-      ? 'Sign in to see and edit the shared André and Agustín numbers and ideas. Until then, changes stay in this browser.'
+      ? 'You are not signed in, so what you change is saved only in this browser and Agustín cannot see it. Sign in with Google to share changes.'
       : ok ? 'Signed in as ' + fbUser.email + '. Editing ' + PROFILES[profile] + '’s numbers; both of you see the changes.'
       : fbUser.email + ' has no access to the shared numbers. Changes stay in this browser.';
   }
@@ -1324,14 +1327,16 @@ window.FIREBASE_CONFIG = {
       if (own) { var pref = prefProfile(); openProfile(PROFILES[pref] ? pref : own); } else { leaveShared(); }
       renderWho();
     });
-    $('btnAuth').addEventListener('click', function () {
+    function authClick() {
       if (fbUser) { flushSync(); firebase.auth().signOut(); return; }
       var provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       firebase.auth().signInWithPopup(provider).then(null, function (e) {
         $('authInfo').textContent = e && e.code === 'auth/popup-blocked' ? 'The sign-in window was blocked. Allow pop-ups for this page and try again.' : 'Sign-in did not finish (' + (e && e.code ? e.code : 'error') + ').';
       });
-    });
+    }
+    $('btnAuth').addEventListener('click', authClick);
+    $('btnSignIn').addEventListener('click', authClick);
     document.querySelector('#who .seg').addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('button[data-prof]') : null;
       if (b && !b.disabled) openProfile(b.getAttribute('data-prof'));
