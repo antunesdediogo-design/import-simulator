@@ -160,6 +160,12 @@ details.adv[open]>summary::before{content:"- "}
 .lnk{background:none;border:0;padding:0;font-weight:600;text-align:left;text-decoration:underline dotted;text-underline-offset:3px;color:var(--text)}
 .lnk:hover{color:var(--accent)}
 .dotc{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.gate{position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.gate .box{max-width:420px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center}
+.gate h1{margin:0 0 8px;font-size:22px}
+.gate p{margin:0 0 18px;color:var(--muted);line-height:1.5}
+.gate p.err{color:var(--bad);font-weight:600}
+.gate .btn{width:100%;margin-top:8px}
 .redlabel{margin:0;color:var(--bad);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .badge[data-s="unsaved"],.badge[data-s="toobig"]{color:var(--bad);border-color:var(--bad)}
 .badge[data-s="saving"],.badge[data-s="wait"]{color:var(--warn)}
@@ -240,6 +246,7 @@ details.adv[open]>summary::before{content:"- "}
 
 <div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalText"><div class="box"><p id="modalText"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" id="modalNo">Cancel</button><button type="button" class="btn pri" id="modalYes">OK</button></div></div></div>
 <div id="toast" hidden role="status"></div>
+<div class="gate" id="gate" hidden role="dialog" aria-modal="true" aria-labelledby="gateTitle"><div class="box"><h1 id="gateTitle">Import Simulator</h1><p id="gateMsg"></p><button class="btn pri" id="gateIn" type="button" hidden>Sign in with Google</button><button class="btn" id="gateOut" type="button" hidden>Sign out and use another account</button></div></div>
 <div id="lightbox" hidden><img alt="Reference photo, enlarged"></div>
 
 <section class="ideas" id="appIdeas" hidden aria-label="Ideas to investigate"></section>
@@ -1312,19 +1319,31 @@ window.FIREBASE_CONFIG = {
       formBuilt = false; refresh(false); setStatus('local');
     }
   }
+  function gate(state, msg) {
+    /* state: 'checking' | 'login' | 'denied' | 'error' | 'open' */
+    var g = $('gate'); g.hidden = state === 'open';
+    $('gateIn').hidden = state !== 'login'; $('gateOut').hidden = state !== 'denied';
+    var m = $('gateMsg'); m.textContent = msg || ''; m.className = state === 'denied' || state === 'error' ? 'err' : '';
+  }
   function initFirebase() {
     if (!FB) return;
+    gate('checking', 'Checking sign-in...');
     $('who').hidden = false; $('btnAuth').hidden = false;
     if (!window.firebase || !firebase.initializeApp) {
-      $('authInfo').textContent = 'The shared database did not load. Changes stay in this browser.'; $('btnAuth').disabled = true; return;
+      $('authInfo').textContent = 'The shared database did not load.'; $('btnAuth').disabled = true; gate('error', 'The shared database could not load. Check your connection and reload the page.'); return;
     }
     try { firebase.initializeApp(FB); fbDb = firebase.firestore(); } catch (e) {
-      $('authInfo').textContent = 'The shared database did not start. Changes stay in this browser.'; return;
+      gate('error', 'The shared database could not start. Reload the page.'); return;
     }
     firebase.auth().onAuthStateChanged(function (u) {
       fbUser = u;
       var own = allowedProfile(u);
-      if (own) { var pref = prefProfile(); openProfile(PROFILES[pref] ? pref : own); } else { leaveShared(); }
+      if (own) { var pref = prefProfile(); openProfile(PROFILES[pref] ? pref : own); gate('open'); }
+      else {
+        leaveShared();
+        if (u) gate('denied', u.email + ' does not have access. Sign in with the account that was invited (André or Agustín).');
+        else gate('login', 'Sign in required. Use your Google account to open the simulator. Only André and Agustín have access, and your changes are shared between you.');
+      }
       renderWho();
     });
     function authClick() {
@@ -1332,11 +1351,14 @@ window.FIREBASE_CONFIG = {
       var provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       firebase.auth().signInWithPopup(provider).then(null, function (e) {
-        $('authInfo').textContent = e && e.code === 'auth/popup-blocked' ? 'The sign-in window was blocked. Allow pop-ups for this page and try again.' : 'Sign-in did not finish (' + (e && e.code ? e.code : 'error') + ').';
+        var em = e && e.code === 'auth/popup-blocked' ? 'The sign-in window was blocked. Allow pop-ups for this page and try again.' : 'Sign-in did not finish (' + (e && e.code ? e.code : 'error') + '). Try again.';
+        $('authInfo').textContent = em; if (!fbUser) gate('login', em);
       });
     }
     $('btnAuth').addEventListener('click', authClick);
     $('btnSignIn').addEventListener('click', authClick);
+    $('gateIn').addEventListener('click', authClick);
+    $('gateOut').addEventListener('click', function () { firebase.auth().signOut(); });
     document.querySelector('#who .seg').addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('button[data-prof]') : null;
       if (b && !b.disabled) openProfile(b.getAttribute('data-prof'));
