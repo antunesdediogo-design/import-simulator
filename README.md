@@ -13,7 +13,7 @@ A one-page tool to check whether a product imported from China to Chile is worth
 - **Notes per product:** comments, links and photos.
 - **Shipment board:** container summary per product (units, goods cost, freight, net cost, ROAS, gross and net profit, with % and a unit or total view) and a freight split by volume or by value.
 - **Cost build-up with duty options:** Form F, general 6% or a custom rate, and what changes if the certificate is missing.
-- **Ideas:** a block shared by André and Agustín for products still to investigate, with author, whether it exists in Chile, market price and saturation by number of listings.
+- **Ideas:** a block shared by André and Agustín that walks each product idea through a validation process: 1 Idea (where it was spotted), 2 Market check (sold in Chile, price, listings and saturation, units sold, AliExpress/Temu price, SEC/ISP/SAG/brand rules, size and weight), Gate A (Chile price against the FCA cost, go or no-go), 3 Supplier (up to 3 Alibaba quotes with reputation ticks and Form F), 4 Numbers (the product in the simulator, net margin and break-even ROAS against your limits), Gate B (order a sample or not), 5 Test (sample, small air shipment, sell-through). Each card shows a 5-step strip and the next step; later stages stay locked until their gate is go, and a no-go or a discard keeps the kill reason on the card.
 - **Last edit:** each product shows who changed it last and when.
 
 ## Where your data is saved

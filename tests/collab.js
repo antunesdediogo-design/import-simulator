@@ -2,6 +2,8 @@
 'use strict';
 const ANDRE = 'antunes.de.diogo@gmail.com', AGUSTIN = 'agustin.oelckers@gmail.com';
 
+const { openStage, passGateA } = require('./ideas.js');
+
 module.exports = async function collabTests(h) {
   const { browser, base, errs, check, newPage, openGroup, wait, loadCalc, ITEMS, IDEAS } = h;
   const local = p => p.evaluate(() => JSON.parse(localStorage.getItem('importsim.v2.local') || 'null'));
@@ -12,7 +14,9 @@ module.exports = async function collabTests(h) {
     await p.fill('#ideaName', name); await p.fill('#ideaLink', link); await p.fill('#ideaNotes', notes);
     await p.click('button[data-act="add"]'); await wait(150);
     const card = '.icard:has(h4:text-is("' + name + '"))';
+    await openStage(p, card, 2);
     await p.fill(card + ' [data-f="price"]', price); await wait(100);
+    await passGateA(p, card); await openStage(p, card, 4); /* creating a product belongs after Gate A */
     return card;
   }
   async function edit(p, k, v) { await p.fill('[data-k="' + k + '"]', v); await p.press('[data-k="' + k + '"]', 'Tab'); await wait(30); }
@@ -29,7 +33,7 @@ module.exports = async function collabTests(h) {
     check('toast shown', (await p.textContent('#toast')) === 'Product created from the idea');
     const d = await local(p), prod = d.products.find(x => x.name === 'Bottle cage'), idea = d.ideas.find(x => x.name === 'Bottle cage');
     check('product fields from the idea', prod && prod.notes === 'Cheap on Alibaba' && prod.links.length === 1 && prod.links[0].url === 'https://example.com/cage' && prod.pl.rrp === '24990' && prod.fromIdea === idea.id, prod);
-    check('idea set to test with productId and profile "local"', idea.status === 'test' && idea.productId === prod.id && idea.productProfile === 'local', idea);
+    check('idea stays investigating (Gate B not decided) with productId and profile "local"', idea.status === 'investigating' && idea.productId === prod.id && idea.productProfile === 'local', idea);
     await p.click('#plist .pitem'); await wait(100);
     await p.click('[data-view="ideas"]'); await wait(150);
     check('button now reads "Open product"', (await p.textContent(card + ' [data-act="tosim"]')) === 'Open product');
@@ -49,7 +53,7 @@ module.exports = async function collabTests(h) {
     const items = await store(p, ITEMS('andre')), ideas = await store(p, IDEAS);
     const idea = Object.values(ideas).find(x => x.name === 'Chain cleaner'), prod = Object.values(items).find(x => x.name === 'Chain cleaner');
     check('product written to André profile with fromIdea', prod && prod.fromIdea === idea.id && prod.links.length === 0 && prod.pl.rrp === '0' && prod.notes === 'Ask supplier', prod);
-    check('idea written with status test, productId, productProfile andre', idea.status === 'test' && idea.productId === prod.id && idea.productProfile === 'andre', idea);
+    check('idea written with status investigating, productId, productProfile andre', idea.status === 'investigating' && idea.productId === prod.id && idea.productProfile === 'andre', idea);
     await p.click('#who .seg button[data-prof="agustin"]'); await wait(500);
     await p.click('[data-view="ideas"]'); await wait(150);
     check('in Agustín profile the button offers to create', (await p.textContent(card + ' [data-act="tosim"]')) === 'Create product in simulator');

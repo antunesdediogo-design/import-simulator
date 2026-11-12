@@ -36,6 +36,7 @@ JS_FILES = [
     'render.js',         # renderView(), refresh(), changed()
     'events.js',         # form/list/tab/view events, product buttons, export/import
     'ui.js',             # menu, modal buttons, Escape key, theme
+    'process.js',        # idea validation steps, gates, price multiple (pure)
     'ideas.js',          # ideas view
     'photos.js',         # photos and lightbox
     'sync.js',           # Firebase shared mode and login gate
