@@ -29,7 +29,7 @@
   }
   function baseline() {
     return { products: [seedProduct()], active: 'p_seed', tab: 'overview', view: 'sim', me: 'André', ideas: [],
-      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk(), scen: { fx: '10', returns: '50', roas: '25' }, mix: { budget: '' } } };
+      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk(), scen: { fx: '10', returns: '50', roas: '25' }, mix: { budget: '' }, gates: { mult: '3', margin: '15', roas: '4' } } };
   }
   function syncDuty(sim) { sim.duty = sim.dutyMode === 'general' ? sim.dutyGen : sim.dutyMode === 'custom' ? sim.dutyCustom : sim.dutyFF; }
   function normProduct(p) {
@@ -56,13 +56,46 @@
       sat: Object.assign({ low: '50', high: '300' }, st.sat || {}),
       mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk(),
       scen: Object.assign({ fx: '10', returns: '50', roas: '25' }, st.scen || {}),
-      mix: Object.assign({ budget: '' }, st.mix || {})
+      mix: Object.assign({ budget: '' }, st.mix || {}),
+      gates: Object.assign({ mult: '3', margin: '15', roas: '4' }, st.gates || {})
     };
     if (st.unconf && typeof st.unconf === 'object') out.unconf = Object.assign({}, st.unconf);
     return out;
   }
+  /* Idea validation process (labels and rules in process.js). Every nested object gets its defaults here,
+     so old ideas, and ideas with a missing or partial object, load safely. Text values stay strings, ticks booleans. */
+  var IDEA_MKT = { sold: '', links: '', direct: '', reg: '', fit: '' };
+  var IDEA_TEST = { sample: false, quality: '', ship: false, units: '', sold: '', ret: '' };
+  var SUP_KEYS = ['years', 'ta', 'rate', 'reviews', 'maker', 'sample', 'formF'];
+  function plainObj(v) { return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
+  function strv(v) { return v === undefined || v === null ? '' : String(v); }
+  function normSup(s) {
+    s = plainObj(s);
+    var o = { url: strv(s.url), price: strv(s.price), moq: strv(s.moq) };
+    SUP_KEYS.forEach(function (k) { o[k] = s[k] === true; });
+    return o;
+  }
+  function normGate(g, extra) {
+    g = plainObj(g);
+    var o = Object.assign({ d: '', why: '', tried: false }, extra, g);
+    if (o.d !== 'go' && o.d !== 'nogo') o.d = '';
+    o.why = strv(o.why); o.tried = o.tried === true;
+    return o;
+  }
   function normIdea(i) {
-    return Object.assign({ id: 'i_' + uid(), name: 'Untitled', link: '', notes: '', author: 'André', created: Date.now(), updated: Date.now(), editedBy: '', status: 'idea', exists: 'unknown', price: '', listings: '' }, i || {});
+    i = plainObj(i);
+    var o = Object.assign({ id: 'i_' + uid(), name: 'Untitled', link: '', notes: '', author: 'André', created: Date.now(), updated: Date.now(), editedBy: '', status: 'idea', exists: 'unknown', price: '', listings: '', seen: '', kill: '' }, i);
+    if (['idea', 'investigating', 'test', 'discarded'].indexOf(o.status) < 0) o.status = 'idea';
+    o.mkt = Object.assign({}, IDEA_MKT, plainObj(i.mkt));
+    o.gateA = normGate(i.gateA, { fca: '' });
+    o.gateB = normGate(i.gateB, { m: '', r: '' });
+    o.sup = Array.isArray(i.sup) ? i.sup.slice(0, 3).map(normSup) : [];
+    var pk = parseInt(i.supPick, 10);
+    o.supPick = pk >= 0 && pk < o.sup.length ? pk : -1;
+    var t = Object.assign({}, IDEA_TEST, plainObj(i.test));
+    t.sample = t.sample === true; t.ship = t.ship === true;
+    o.test = t;
+    return o;
   }
   function normState(s) {
     var b = baseline();

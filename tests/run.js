@@ -6,6 +6,7 @@
    - Local build in the browser: KPI texts for the seeded product.
    - Shared mode (index.html) with tests/fbmock.js in place of Firebase: login gate, sign-in, sync,
      profiles, ideas, sign-out, access denied, pre-existing data loads with 0 writes.
+   - Idea validation process (tests/ideas.js): old ideas, gates, price multiple, kill reason, focus, reload, shared sync.
    - No uncaught page errors.
    Exits non-zero on any failure. Needs Playwright with Chromium (global install is fine). */
 'use strict';
@@ -216,6 +217,7 @@ async function preexisting(browser, base, errs) {
   goldenNode();
   require('./whatif.js').node(check);
   require('./optimizer.test.js')(check);
+  require('./ideas.js').node(check);
   const srv = await serve(), base = 'http://127.0.0.1:' + srv.address().port;
   const browser = await chromium.launch();
   const errs = [];
@@ -225,6 +227,7 @@ async function preexisting(browser, base, errs) {
     await shared(browser, base, errs);
     await preexisting(browser, base, errs);
     await require('./whatif.js').browser(browser, base, errs, check, newPage);
+    await require('./ideas.js').browser(browser, base, errs, check, newPage);
     await require('./collab.js')({ browser, base, errs, check, newPage, openGroup, wait, loadCalc, ITEMS, IDEAS });
   } catch (e) { check('runner exception', false, String(e && e.stack || e)); }
   console.log('Page errors');

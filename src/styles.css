@@ -213,3 +213,62 @@ details.grp>summary .hc{margin-left:auto;font-weight:400;color:var(--muted);font
 ul.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
 ul.hist li{overflow-wrap:anywhere}
 ul.hist .num{color:var(--text)}
+/* idea validation process (ideas.js, process.js) */
+.istrip{list-style:none;margin:0;padding:0;display:flex;align-items:flex-start;gap:4px}
+.istrip li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);text-align:center}
+.istrip li b{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1}
+.istrip li span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.istrip li.gt{flex:0 0 auto}
+.istrip li.gt b{width:20px;height:20px;border-radius:5px;margin-top:3px;font-size:10px}
+.istrip li.done b{background:var(--good);border-color:var(--good);color:var(--panel)}
+.istrip li.cur b{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.istrip li.cur span{color:var(--text);font-weight:600}
+.istrip li.lock b{border-style:dashed;opacity:.7}
+.istrip li.stop b{background:var(--bad);border-color:var(--bad);color:var(--panel)}
+.istrip li.stop span{color:var(--bad);font-weight:600}
+.inext{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:8px 10px;text-align:left;font-size:13px;color:var(--text);min-height:38px}
+.inext:hover{border-color:var(--accent)}
+.inext.k{border-left-color:var(--bad)}
+.ikill{border:1px solid var(--bad);border-radius:10px;padding:9px 12px;font-size:13px;overflow-wrap:anywhere}
+.ikill>b,.ikill label.f b{color:var(--bad)}
+.icard.killed{border-color:color-mix(in srgb,var(--bad) 55%,var(--line))}
+.stgs{display:flex;flex-direction:column;gap:8px}
+details.stg>summary{gap:10px}
+details.stg>summary .sn{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+details.stg.done>summary .sn{background:var(--good);border-color:var(--good);color:var(--panel)}
+details.stg.cur{border-color:var(--accent)}
+details.stg.cur>summary .sn{border-color:var(--accent);color:var(--accent)}
+details.stg.stop{border-color:var(--bad)}
+details.stg.stop>summary .sn{border-color:var(--bad);color:var(--bad)}
+details.stg.lock>summary{color:var(--muted)}
+details.stg.lock>summary .sn{border-style:dashed}
+fieldset.sb{border:0;margin:0;padding:2px 12px 12px;min-width:0;display:flex;flex-direction:column;gap:10px}
+fieldset.sb:disabled label.f,fieldset.sb:disabled .sup,fieldset.sb:disabled .igate,fieldset.sb:disabled label.chk{opacity:.6}
+.stg .chk3 .dot{margin-top:1px}
+.stg .chk3 .c.tk .dot{margin-top:11px}
+.chk3 .c>div{min-width:0}
+.igate{border:1px dashed var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
+.igate h5{margin:0;font:700 14px Archivo,sans-serif}
+.dec{display:flex;gap:8px;flex-wrap:wrap}
+.gbtn{min-width:88px}
+.gbtn:disabled{opacity:.45;cursor:not-allowed}
+.gbtn:disabled:hover{border-color:var(--line)}
+.gbtn.go[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:var(--panel)}
+.gbtn.nogo[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--panel)}
+.btn.sm{min-height:32px;padding:5px 10px;font-size:12px}
+.sup{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
+.sup.on{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.suph{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.sf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sf .wide{grid-column:1/-1}
+.sf3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ticks label.chk{min-height:32px;font-size:12.5px;align-items:flex-start;padding-top:6px}
+.ticks label.chk input{flex:none;margin:0}
+.nums{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.nums b.num{font-size:15px}
+@media (max-width:520px){
+  .ideas{padding:14px}
+  .igrid{grid-template-columns:minmax(0,1fr)}
+  .icard{padding:12px}
+  .icard .hd{flex-wrap:wrap}
+}
