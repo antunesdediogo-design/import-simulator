@@ -113,6 +113,25 @@ async function localBuild(browser, base, errs) {
   await p.context().close();
 }
 
+async function mixBrowser(browser, base, errs) {
+  console.log('Mix optimizer card (dist/local.html)');
+  const p = await newPage(browser, errs, 'mix');
+  await p.goto(base + '/dist/local.html'); await wait(300);
+  await p.click('[data-tab="ship"]'); await wait(150);
+  check('mix card renders', (await p.textContent('#view')).indexOf('Best mix for this shipment') >= 0);
+  check('blank max shown as fixed', (await p.textContent('.mix tbody')).indexOf('fixed') >= 0);
+  await p.fill('[data-maxu="p_seed"]', '1000'); await p.press('[data-maxu="p_seed"]', 'Enter'); await wait(300);
+  const btn = await p.$('[data-mixapply]');
+  check('Apply button shown after entering a max', !!btn);
+  const sug = await p.$eval('.mix tbody tr td:nth-child(4) b', e => e.textContent);
+  if (btn) { await btn.click(); await wait(100); await p.click('#modalYes'); await wait(300); }
+  await openGroup(p, 0);
+  const q = await p.inputValue('[data-k="s.qty"]');
+  check('Apply sets the suggested quantity', q === sug && q !== '30', [q, sug]);
+  check('no Apply button once applied', !(await p.$('[data-mixapply]')));
+  await p.context().close();
+}
+
 async function shared(browser, base, errs) {
   console.log('Shared mode (index.html + fbmock)');
   const p = await newPage(browser, errs, 'shared');
@@ -196,11 +215,13 @@ async function preexisting(browser, base, errs) {
 
   goldenNode();
   require('./whatif.js').node(check);
+  require('./optimizer.test.js')(check);
   const srv = await serve(), base = 'http://127.0.0.1:' + srv.address().port;
   const browser = await chromium.launch();
   const errs = [];
   try {
     await localBuild(browser, base, errs);
+    await mixBrowser(browser, base, errs);
     await shared(browser, base, errs);
     await preexisting(browser, base, errs);
     await require('./whatif.js').browser(browser, base, errs, check, newPage);

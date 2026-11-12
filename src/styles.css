@@ -199,3 +199,6 @@ table.wi-scen th,table.wi-scen td{white-space:nowrap}
 table.wi-scen tr.wi-sep td{border-top:2px solid var(--line)}
 .wi-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 @media (max-width:520px){.wi-fields{grid-template-columns:1fr}}
+.mixin{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-height:36px;width:110px;text-align:right;font-size:14px}
+.mix table.t td{vertical-align:middle}
+@media (max-width:520px){.mixin{width:76px}.mix table.t td,.mix table.t th{padding:8px 6px}}
