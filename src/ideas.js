@@ -37,7 +37,7 @@
       '<div class="c"><span class="dot' + (String(i.listings || '').trim() ? ' ok' : '') + '" data-dot="listings"></span><label class="f"><span>3. Listings found (saturation)</span><input type="text" inputmode="numeric" data-i="' + esc(i.id) + '" data-f="listings" value="' + esc(i.listings || '') + '" placeholder="e.g. 120"></label></div></div>' +
       '<label class="f"><span>Notes, source of the price, competitors</span><textarea data-i="' + esc(i.id) + '" data-f="notes">' + esc(i.notes || '') + '</textarea></label>' +
       '<div class="note">' + searchLinks(i) + '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn pri" data-act="tosim" data-id="' + esc(i.id) + '">Simulate it</button><button type="button" class="btn danger" data-act="del" data-id="' + esc(i.id) + '">Delete</button></div></article>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn pri" data-act="tosim" data-id="' + esc(i.id) + '">' + (ideaProduct(i) ? 'Open product' : 'Create product in simulator') + '</button><button type="button" class="btn danger" data-act="del" data-id="' + esc(i.id) + '">Delete</button></div></article>';
   }
   function renderIdeas() {
     var el = $('appIdeas'), list = S.ideas.filter(function (i) {
@@ -70,6 +70,13 @@
     var b = e.target.closest('[data-view]'); if (!b) return;
     S.view = b.getAttribute('data-view'); save(); showView(true);
   });
+  function ideaProfileKey() { return mode === 'shared' ? profile : 'local'; }
+  /* The product made from this idea in the profile that is open, or null. */
+  function ideaProduct(i) {
+    if (!i.productId || i.productProfile !== ideaProfileKey()) return null;
+    for (var k = 0; k < S.products.length; k++) if (S.products[k].id === i.productId) return S.products[k];
+    return null;
+  }
   function ideaById(id) { for (var i = 0; i < S.ideas.length; i++) if (S.ideas[i].id === id) return S.ideas[i]; return null; }
   $('appIdeas').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act]'); if (!b) return;
@@ -90,12 +97,16 @@
       return;
     }
     if (act === 'tosim') {
+      var ex = ideaProduct(i);
+      if (ex) { S.active = ex.id; S.tab = 'overview'; S.view = 'sim'; changed(false); window.scrollTo(0, 0); return; }
       var p = blankProduct(i.name); p.sim.lcl = true; p.sim.qty = '50';
-      var pr = String(i.price || '').replace(/\D/g, ''); if (pr) p.pl.rrp = pr;
-      p.notes = (safeUrl(i.link) ? i.link + '\n' : '') + (i.notes || '') + '\nIdea by ' + i.author + '. Listings found: ' + (i.listings || 'not checked') + '.';
+      p.notes = i.notes || '';
+      if (safeUrl(i.link)) p.links = [{ url: safeUrl(i.link) }];
+      var pr = String(i.price || '').replace(/[\s$.,]/g, ''); if (/^\d+$/.test(pr) && +pr > 0) p.pl.rrp = String(+pr);
+      p.fromIdea = i.id;
       S.products.push(p); S.active = p.id; S.tab = 'overview'; S.view = 'sim';
-      if (i.status === 'idea') i.status = 'investigating';
-      changed(false); window.scrollTo(0, 0);
+      i.status = 'test'; i.productId = p.id; i.productProfile = ideaProfileKey(); i.editedBy = S.me; i.updated = Date.now();
+      changed(false); window.scrollTo(0, 0); toast('Product created from the idea');
     }
   });
   function ideaInput(e) {

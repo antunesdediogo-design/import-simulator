@@ -182,3 +182,14 @@ details.adv[open]>summary::before{content:"- "}
   .kpi .v{font-size:19px}
   .verdict .big{font-size:34px}
 }
+/* history and guessed inputs (collab.js) */
+label.f>span.lh{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.gtog{flex:none;font-size:10.5px;font-weight:600;line-height:1;padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--muted);cursor:pointer;white-space:nowrap;user-select:none}
+.gtog[data-on="guess"]{color:var(--warn);border-color:var(--warn)}
+.gtog:hover{border-color:var(--accent)}
+.gline{background:none;border:0;border-left:3px solid var(--warn);padding:2px 0 2px 8px;text-align:left;font-size:12px;color:var(--muted);line-height:1.5}
+.gline:hover{color:var(--text)}
+details.grp>summary .hc{margin-left:auto;font-weight:400;color:var(--muted);font-size:12px}
+ul.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+ul.hist li{overflow-wrap:anywhere}
+ul.hist .num{color:var(--text)}

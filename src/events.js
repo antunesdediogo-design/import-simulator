@@ -24,7 +24,7 @@
   $('view').addEventListener('change', function (e) {
     var id = e.target.getAttribute && e.target.getAttribute('data-ship');
     if (!id) return;
-    S.products.forEach(function (x) { if (x.id === id) x.sim.lcl = e.target.checked; });
+    S.products.forEach(function (x) { if (x.id === id) { logChange(x, 's.lcl', x.sim.lcl === true, e.target.checked); x.sim.lcl = e.target.checked; } });
     changed(false);
   });
   $('view').addEventListener('click', function (e) {
@@ -42,7 +42,7 @@
   }
   $('btnAdd').addEventListener('click', addProduct);
   $('btnDup').addEventListener('click', function () {
-    var p = JSON.parse(JSON.stringify(cur())); p.id = 'p_' + uid(); p.name += ' (copy)';
+    var p = JSON.parse(JSON.stringify(cur())); p.id = 'p_' + uid(); p.name += ' (copy)'; delete p.history; delete p.fromIdea;
     S.products.push(p); S.active = p.id; changed(false);
   });
   $('btnDel').addEventListener('click', function () {

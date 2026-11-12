@@ -43,16 +43,21 @@
       links: Array.isArray(p.links) ? p.links : [], photos: Array.isArray(p.photos) ? p.photos : [],
       sim: sim, pl: Object.assign({}, DEFAULT_PL, p.pl || {}) };
     if (p.updatedBy) { out.updatedBy = p.updatedBy; out.updatedAt = p.updatedAt || 0; }
+    if (p.fromIdea) out.fromIdea = p.fromIdea;
+    if (Array.isArray(p.history) && p.history.length) out.history = p.history.slice(0, 20);
+    if (p.unconf && typeof p.unconf === 'object') out.unconf = Object.assign({}, p.unconf);
     return out;
   }
   function normSettings(st) {
     st = st || {};
-    return {
+    var out = {
       fx: st.fx !== undefined && st.fx !== '' ? st.fx : '1000',
       lcl: Object.assign({ rate: '350', min: '1', agent: '0', split: 'space' }, st.lcl || {}),
       sat: Object.assign({ low: '50', high: '300' }, st.sat || {}),
       mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk()
     };
+    if (st.unconf && typeof st.unconf === 'object') out.unconf = Object.assign({}, st.unconf);
+    return out;
   }
   function normIdea(i) {
     return Object.assign({ id: 'i_' + uid(), name: 'Untitled', link: '', notes: '', author: 'André', created: Date.now(), updated: Date.now(), editedBy: '', status: 'idea', exists: 'unknown', price: '', listings: '' }, i || {});

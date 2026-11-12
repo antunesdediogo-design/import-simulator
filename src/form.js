@@ -41,7 +41,7 @@
     return '<label class="f"' + show + '><span>' + f[1] + '</span><input type="text" inputmode="decimal" data-k="' + f[0] + '"></label>';
   }
   function buildForm() {
-    var html = '<label class="f"><span>Product name</span><input type="text" data-k="n.name"></label><p class="note" id="lastEdit" style="margin:-6px 0 0"></p>';
+    var html = '<button type="button" class="gline" id="guessLine" hidden></button><label class="f"><span>Product name</span><input type="text" data-k="n.name"></label><p class="note" id="lastEdit" style="margin:-6px 0 0"></p>';
     SPEC.forEach(function (g, gi) {
       var main = '', adv = '';
       g.f.forEach(function (f) { var h = fieldHtml(f); if (ADV.indexOf(f[0]) >= 0) adv += h; else main += h; });
@@ -52,7 +52,9 @@
     html += '<details class="grp"><summary>Notes, links, photos</summary><div class="fields"><label class="f wide"><span>Supplier, reminders</span><textarea data-k="n.notes"></textarea></label>' +
       '<label class="f wide"><span>Links (one per line)</span><textarea data-k="n.linksText" style="min-height:60px"></textarea></label><div class="note wide" id="linkList"></div>' +
       '<div class="wide"><div class="photos" id="photoList"></div><label class="btn" style="display:inline-block;cursor:pointer">Add photos<input type="file" id="photoIn" accept="image/*" multiple hidden></label><p class="note" id="photoMsg" style="margin:6px 0 0"></p></div></div></details>';
+    html += '<details class="grp" id="histGrp"><summary>History<span class="hc" id="histHint"></span></summary><div class="fields"><ul class="hist wide" id="histList"></ul></div></details>';
     $('form').innerHTML = html;
+    decorateGuesses();
     var sel = $('mkSel');
     sel.innerHTML = S.settings.mk.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.name) + (m.official ? '' : ' (unconfirmed)') + '</option>'; }).join('');
     formBuilt = true;
@@ -108,6 +110,7 @@
     renderPhotos();
     var note = $('mkNote');
     if (note) note.textContent = (mk.official ? 'Official rate. ' : 'Unconfirmed rate. ') + (mk.note || '');
+    collabVis();
   }
 
   /* ===== product list ===== */

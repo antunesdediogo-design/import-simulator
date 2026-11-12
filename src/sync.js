@@ -6,7 +6,7 @@
   var PROFILES = { andre: 'André', agustin: 'Agustín' };
   var ALLOWED = { 'antunes.de.diogo@gmail.com': 'andre', 'agustin.oelckers@gmail.com': 'agustin' };
   var fbUser = null, fbDb = null, profile = null, who = null, itemsCol = null, ideasCol = null, unsubItems = null, unsubIdeas = null;
-  var syncTimer = null, lastItems = {}, lastIdeas = {}, lastSettings = '', loadedItems = false, seeded = false;
+  var syncTimer = null, lastItems = {}, lastIdeas = {}, lastSettings = '', loadedItems = false, seeded = false, placeholder = null;
 
   function canon(o) {
     if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
@@ -66,7 +66,7 @@
     ids = Object.keys(remote);
     if (!ids.length) {
       if (!snap.metadata.fromCache && !seeded) {
-        seeded = true; loadedItems = true; lastItems = {}; lastSettings = '';
+        seeded = true; loadedItems = true; lastItems = {}; lastSettings = ''; placeholder = null;
         S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed';
         syncUp(); formBuilt = false; refresh(false);
       }
@@ -80,7 +80,9 @@
       if (!loc && lastItems[id] !== undefined) return; /* deleted here, delete still on its way */
       var np = normProduct(remote[id]); next.push(np); lastItems[id] = canonP(np);
     });
-    S.products.forEach(function (loc) { if (!remote[loc.id] && lastItems[loc.id] === undefined) next.push(loc); });
+    /* local products not on the server yet are kept, except the placeholder shown while the profile loads */
+    S.products.forEach(function (loc) { if (loc !== placeholder && !remote[loc.id] && lastItems[loc.id] === undefined) next.push(loc); });
+    placeholder = null;
     Object.keys(lastItems).forEach(function (id) { if (!remote[id]) delete lastItems[id]; });
     next.sort(function (a, b) { return (a.created || 0) - (b.created || 0); });
     S.products = next.length ? next : [seedProduct()];
@@ -141,7 +143,7 @@
     try { localStorage.setItem('importsim.profile', pid); } catch (e) {}
     itemsCol = fbDb.collection('workspaces/andre-agustin/profiles/' + pid + '/items');
     mode = 'shared'; loadedItems = false; seeded = false; lastItems = {}; lastSettings = '';
-    S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed'; S.me = who;
+    S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed'; S.me = who; placeholder = S.products[0];
     if (firstOpen) { S.ideas = []; lastIdeas = {}; ideasCol = fbDb.collection('workspaces/andre-agustin/ideas'); }
     setStatus('wait');
     var col = itemsCol;
