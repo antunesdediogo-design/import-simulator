@@ -22,6 +22,7 @@ JS_FILES = [
     'util.js',           # $, ask/toast/closeModal, esc and number formatters, uid, COLORS
     'state.js',          # defaults, normalisers, load/save, status, S, cur(), recompute()
     'form.js',           # SPEC, sidebar form, product list
+    'collab.js',         # change history per product, guess/confirmed inputs
     'views.js',          # TABS, KPIs, tab bar
     'view-overview.js',
     'view-cost.js',

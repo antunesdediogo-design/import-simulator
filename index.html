@@ -3,7 +3,7 @@
 <head>
 <meta name="description" content="Landed cost, IVA, cash flow and marketplace P&L simulator for importing products from China to Chile.">
 <meta charset="utf-8">
-<meta name="build" content="2026-11-12 14:16 UTC 9b1da86">
+<meta name="build" content="2026-11-12 14:25 UTC 471721f">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Import Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -193,6 +193,37 @@ details.adv[open]>summary::before{content:"- "}
   .kpi .v{font-size:19px}
   .verdict .big{font-size:34px}
 }
+/* what-if tab */
+.wi-grid{border-collapse:separate;border-spacing:3px;font-size:13px;min-width:100%}
+.wi-grid th{font-size:11px;color:var(--muted);font-weight:600;padding:4px 6px;text-align:center;white-space:nowrap}
+.wi-grid th[scope="row"]{text-align:right}
+.wi-grid th.wi-curh{color:var(--text)}
+.wi-grid td{padding:0;border-radius:7px}
+.wi-grid td button{width:100%;min-width:64px;min-height:36px;border:0;background:transparent;color:var(--text);font-size:13px;padding:6px;border-radius:7px;cursor:pointer}
+.wi-grid td button:hover{box-shadow:inset 0 0 0 1px var(--text)}
+.wi-loss{background:color-mix(in srgb,var(--bad) 26%,transparent)}
+.wi-below{background:color-mix(in srgb,var(--warn) 14%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 45%,transparent)}
+.wi-ok{background:color-mix(in srgb,var(--good) 30%,transparent)}
+.wi-grid td.wi-cur{outline:2px solid var(--text);outline-offset:1px}
+.legend b.wi-curk{background:transparent;outline:2px solid var(--text);outline-offset:-2px}
+table.wi-scen th,table.wi-scen td{white-space:nowrap}
+table.wi-scen tr.wi-sep td{border-top:2px solid var(--line)}
+.wi-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.wi-fields{grid-template-columns:1fr}}
+.mixin{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-height:36px;width:110px;text-align:right;font-size:14px}
+.mix table.t td{vertical-align:middle}
+@media (max-width:520px){.mixin{width:76px}.mix table.t td,.mix table.t th{padding:8px 6px}}
+/* history and guessed inputs (collab.js) */
+label.f>span.lh{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.gtog{flex:none;font-size:10.5px;font-weight:600;line-height:1;padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--muted);cursor:pointer;white-space:nowrap;user-select:none}
+.gtog[data-on="guess"]{color:var(--warn);border-color:var(--warn)}
+.gtog:hover{border-color:var(--accent)}
+.gline{background:none;border:0;border-left:3px solid var(--warn);padding:2px 0 2px 8px;text-align:left;font-size:12px;color:var(--muted);line-height:1.5}
+.gline:hover{color:var(--text)}
+details.grp>summary .hc{margin-left:auto;font-weight:400;color:var(--muted);font-size:12px}
+ul.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+ul.hist li{overflow-wrap:anywhere}
+ul.hist .num{color:var(--text)}
 </style>
 </head>
 <body>
@@ -413,7 +444,7 @@ window.FIREBASE_CONFIG = {
   var COLORS = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)'];
 
   /* ===== state ===== */
-  var DEFAULT_SIM = { qty: '100', price: '0', kgu: '0.2', rate: '10', origin: '0', insp: '1', duty: '0', agent: '150', dep: '30', cl: '0', cw: '0', ch: '0', upc: '100', vdiv: '6000', lcl: false, dutyMode: 'formF', dutyFF: '0', dutyGen: '6', dutyCustom: '', hs: '' };
+  var DEFAULT_SIM = { qty: '100', price: '0', kgu: '0.2', rate: '10', origin: '0', insp: '1', duty: '0', agent: '150', dep: '30', cl: '0', cw: '0', ch: '0', upc: '100', vdiv: '6000', lcl: false, dutyMode: 'formF', dutyFF: '0', dutyGen: '6', dutyCustom: '', hs: '', maxUnits: '' };
   var DEFAULT_PL = { rrp: '0', mk: 'ml', roas: '4', returns: '3', target: '20', days: '1', full: false, fullSize: 'S', fullIn: '0' };
 
   function defaultMk() {
@@ -443,7 +474,7 @@ window.FIREBASE_CONFIG = {
   }
   function baseline() {
     return { products: [seedProduct()], active: 'p_seed', tab: 'overview', view: 'sim', me: 'André', ideas: [],
-      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk() } };
+      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk(), scen: { fx: '10', returns: '50', roas: '25' }, mix: { budget: '' } } };
   }
   function syncDuty(sim) { sim.duty = sim.dutyMode === 'general' ? sim.dutyGen : sim.dutyMode === 'custom' ? sim.dutyCustom : sim.dutyFF; }
   function normProduct(p) {
@@ -457,16 +488,23 @@ window.FIREBASE_CONFIG = {
       links: Array.isArray(p.links) ? p.links : [], photos: Array.isArray(p.photos) ? p.photos : [],
       sim: sim, pl: Object.assign({}, DEFAULT_PL, p.pl || {}) };
     if (p.updatedBy) { out.updatedBy = p.updatedBy; out.updatedAt = p.updatedAt || 0; }
+    if (p.fromIdea) out.fromIdea = p.fromIdea;
+    if (Array.isArray(p.history) && p.history.length) out.history = p.history.slice(0, 20);
+    if (p.unconf && typeof p.unconf === 'object') out.unconf = Object.assign({}, p.unconf);
     return out;
   }
   function normSettings(st) {
     st = st || {};
-    return {
+    var out = {
       fx: st.fx !== undefined && st.fx !== '' ? st.fx : '1000',
       lcl: Object.assign({ rate: '350', min: '1', agent: '0', split: 'space' }, st.lcl || {}),
       sat: Object.assign({ low: '50', high: '300' }, st.sat || {}),
-      mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk()
+      mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk(),
+      scen: Object.assign({ fx: '10', returns: '50', roas: '25' }, st.scen || {}),
+      mix: Object.assign({ budget: '' }, st.mix || {})
     };
+    if (st.unconf && typeof st.unconf === 'object') out.unconf = Object.assign({}, st.unconf);
+    return out;
   }
   function normIdea(i) {
     return Object.assign({ id: 'i_' + uid(), name: 'Untitled', link: '', notes: '', author: 'André', created: Date.now(), updated: Date.now(), editedBy: '', status: 'idea', exists: 'unknown', price: '', listings: '' }, i || {});
@@ -585,7 +623,7 @@ window.FIREBASE_CONFIG = {
     return '<label class="f"' + show + '><span>' + f[1] + '</span><input type="text" inputmode="decimal" data-k="' + f[0] + '"></label>';
   }
   function buildForm() {
-    var html = '<label class="f"><span>Product name</span><input type="text" data-k="n.name"></label><p class="note" id="lastEdit" style="margin:-6px 0 0"></p>';
+    var html = '<button type="button" class="gline" id="guessLine" hidden></button><label class="f"><span>Product name</span><input type="text" data-k="n.name"></label><p class="note" id="lastEdit" style="margin:-6px 0 0"></p>';
     SPEC.forEach(function (g, gi) {
       var main = '', adv = '';
       g.f.forEach(function (f) { var h = fieldHtml(f); if (ADV.indexOf(f[0]) >= 0) adv += h; else main += h; });
@@ -596,7 +634,9 @@ window.FIREBASE_CONFIG = {
     html += '<details class="grp"><summary>Notes, links, photos</summary><div class="fields"><label class="f wide"><span>Supplier, reminders</span><textarea data-k="n.notes"></textarea></label>' +
       '<label class="f wide"><span>Links (one per line)</span><textarea data-k="n.linksText" style="min-height:60px"></textarea></label><div class="note wide" id="linkList"></div>' +
       '<div class="wide"><div class="photos" id="photoList"></div><label class="btn" style="display:inline-block;cursor:pointer">Add photos<input type="file" id="photoIn" accept="image/*" multiple hidden></label><p class="note" id="photoMsg" style="margin:6px 0 0"></p></div></div></details>';
+    html += '<details class="grp" id="histGrp"><summary>History<span class="hc" id="histHint"></span></summary><div class="fields"><ul class="hist wide" id="histList"></ul></div></details>';
     $('form').innerHTML = html;
+    decorateGuesses();
     var sel = $('mkSel');
     sel.innerHTML = S.settings.mk.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.name) + (m.official ? '' : ' (unconfirmed)') + '</option>'; }).join('');
     formBuilt = true;
@@ -652,6 +692,7 @@ window.FIREBASE_CONFIG = {
     renderPhotos();
     var note = $('mkNote');
     if (note) note.textContent = (mk.official ? 'Official rate. ' : 'Unconfirmed rate. ') + (mk.note || '');
+    collabVis();
   }
 
   /* ===== product list ===== */
@@ -664,8 +705,150 @@ window.FIREBASE_CONFIG = {
     }).join('');
   }
 
+  /* ===== change history and guessed inputs =====
+     p.history: last 20 changes, newest first: { t, by, k, label, from, to }.
+     p.unconf / S.settings.unconf: keys of inputs that are still a guess. Missing object = defaults below. */
+  var HIST_MAX = 20, HIST_MERGE = 5 * 60 * 1000;
+  var HIST_LABELS = { 'n.name': 'Product name', 's.lcl': 'Shipping', 's.dutyMode': 'Tariff treatment', 's.dutyFF': 'Duty with Form F', 's.dutyGen': 'General tariff',
+    's.dutyCustom': 'Custom duty', 's.hs': 'Tariff code', 'p.full': 'Mercado Libre Full', 'p.fullSize': 'Full size', 'p.fullIn': 'Full inbound cost' };
+  function histLabel(k) {
+    if (HIST_LABELS[k]) return HIST_LABELS[k];
+    for (var g = 0; g < SPEC.length; g++) for (var i = 0; i < SPEC[g].f.length; i++) {
+      var f = SPEC[g].f[i]; if (f[0] === k && f[1]) return f[1].replace(/\s*\(.*\)\s*$/, '');
+    }
+    return k;
+  }
+  function histKey(k) { return !!k && (k === 'n.name' || /^[sp]\./.test(k)); }
+  function histWho() { return mode === 'shared' ? who : S.me; }
+  /* Shared helper: call it before or after changing a product field from code (from = old value). */
+  function logChange(p, k, from, to) {
+    if (!p || String(from) === String(to)) return false;
+    var by = histWho(), now = Date.now(), h = Array.isArray(p.history) ? p.history.slice() : [], top = h[0];
+    if (top && top.k === k && top.by === by && now - top.t < HIST_MERGE) {
+      top = Object.assign({}, top, { t: now, to: to }); h[0] = top;
+      if (String(top.from) === String(to)) h.shift(); /* edited back: nothing changed */
+    } else h.unshift({ t: now, by: by, k: k, label: histLabel(k), from: from, to: to });
+    if (h.length) p.history = h.slice(0, HIST_MAX); else delete p.history;
+    return true;
+  }
+  function histVal(k, v) {
+    if (k === 's.lcl') return v === true ? 'Sea' : 'Air';
+    if (v === true) return 'Yes';
+    if (v === false) return 'No';
+    if (k === 'p.mk') { for (var i = 0; i < S.settings.mk.length; i++) if (S.settings.mk[i].id === v) return S.settings.mk[i].name; }
+    return v === undefined || v === null || String(v) === '' ? '(empty)' : String(v);
+  }
+  function renderHistory(p) {
+    var el = $('histList'); if (!el) return;
+    var h = Array.isArray(p.history) ? p.history : [];
+    el.innerHTML = h.length ? h.map(function (x) {
+      return '<li>' + esc(fdateTime(x.t)) + ' · ' + esc(x.by || '') + ' · ' + esc(x.label || x.k) + ': <span class="num">' + esc(histVal(x.k, x.from)) + ' → ' + esc(histVal(x.k, x.to)) + '</span></li>';
+    }).join('') : '<li class="mut">No changes recorded yet</li>';
+    var hi = $('histHint'); if (hi) hi.textContent = h.length ? h.length + (h.length === 1 ? ' change' : ' changes') : '';
+  }
+  /* Form edits: the value before the first keystroke is kept until the change event (blur, select, checkbox). */
+  var histStart = {};
+  $('form').addEventListener('input', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-k'); if (!histKey(k)) return;
+    var id = cur().id + '|' + k; if (!(id in histStart)) histStart[id] = getVal(k);
+  }, true);
+  $('form').addEventListener('change', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-k'); if (!histKey(k)) return;
+    var id = cur().id + '|' + k; if (!(id in histStart)) return;
+    var from = histStart[id]; delete histStart[id];
+    if (logChange(cur(), k, from, getVal(k))) { save(); renderHistory(cur()); }
+  });
+  $('form').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mode]'); if (!b) return; /* events.js saves after this capture handler */
+    var p = cur(); logChange(p, 's.lcl', p.sim.lcl === true, b.getAttribute('data-mode') === 'sea');
+  }, true);
+
+  /* Guessed inputs */
+  var GUESS = [['s.price', 'FCA price'], ['s.dutyFF', 'Duty rate'], ['s.dutyGen', 'Duty rate'], ['s.dutyCustom', 'Duty rate'], ['s.hs', 'Tariff code'],
+    ['m.commission', 'Commission'], ['p.roas', 'ROAS'], ['p.returns', 'Returns'], ['g.fx', 'Exchange rate'], ['l.rate', 'Sea rate'], ['l.agent', 'Shared agent']];
+  var GUESS_DEF = ['s.dutyFF', 's.dutyGen', 's.dutyCustom', 's.hs', 'p.roas', 'p.returns', 'l.rate', 'l.agent'];
+  function guessShared(k) { return /^[glm]\./.test(k); }
+  function guessKey(k, p) { return k === 'm.commission' ? 'm.commission.' + p.pl.mk : k; }
+  function isGuess(k, p) {
+    p = p || cur();
+    var o = guessShared(k) ? S.settings.unconf : p.unconf;
+    if (o) return o[guessKey(k, p)] === true;
+    return k === 'm.commission' ? mkById(p.pl.mk).official !== true : GUESS_DEF.indexOf(k) >= 0;
+  }
+  function guessDefaults(shared) {
+    var o = {};
+    GUESS_DEF.forEach(function (k) { if (guessShared(k) === shared) o[k] = true; });
+    if (shared) S.settings.mk.forEach(function (m) { if (m.official !== true) o['m.commission.' + m.id] = true; });
+    return o;
+  }
+  function toggleGuess(k) {
+    var p = cur(), sh = guessShared(k);
+    var o = sh ? (S.settings.unconf || guessDefaults(true)) : (p.unconf || guessDefaults(false));
+    o = Object.assign({}, o);
+    var key = guessKey(k, p);
+    if (o[key] === true) delete o[key]; else o[key] = true;
+    if (sh) S.settings.unconf = o; else p.unconf = o;
+    changed(true);
+  }
+  function guessRelevant(k, p) {
+    var dm = p.sim.dutyMode;
+    if (k === 's.dutyFF') return dm === 'formF';
+    if (k === 's.dutyGen') return dm === 'general';
+    if (k === 's.dutyCustom') return dm === 'custom';
+    if (k === 'l.rate' || k === 'l.agent') return p.sim.lcl === true;
+    return true;
+  }
+  function guessList(p) {
+    p = p || cur();
+    return GUESS.filter(function (g) { return guessRelevant(g[0], p) && isGuess(g[0], p); });
+  }
+  /* Adds the guess/confirmed switch next to the label of each sensitive field (called by buildForm). */
+  function decorateGuesses() {
+    GUESS.forEach(function (g) {
+      var inp = $('form').querySelector('[data-k="' + g[0] + '"]'); if (!inp) return;
+      var lab = inp.closest('label.f'), sp = lab && lab.querySelector('span'); if (!sp) return;
+      sp.classList.add('lh');
+      sp.innerHTML = '<span>' + sp.innerHTML + '</span><span class="gtog" role="button" tabindex="0" data-guess="' + g[0] + '"></span>';
+    });
+  }
+  function renderGuesses() {
+    var p = cur();
+    $('form').querySelectorAll('[data-guess]').forEach(function (t) {
+      var gs = isGuess(t.getAttribute('data-guess'), p);
+      t.setAttribute('data-on', gs ? 'guess' : 'ok');
+      t.textContent = gs ? '? guess' : '✓ confirmed';
+      t.title = gs ? 'Still a guess. Click when confirmed.' : 'Confirmed. Click to mark as a guess.';
+      t.setAttribute('aria-label', (gs ? 'Still a guess' : 'Confirmed') + '. Click to change.');
+    });
+    var line = $('guessLine'); if (!line) return;
+    var gl = guessList(p), names = [];
+    gl.forEach(function (g) { if (names.indexOf(g[1]) < 0) names.push(g[1]); });
+    line.hidden = !gl.length;
+    if (gl.length) {
+      line.setAttribute('data-first', gl[0][0]);
+      line.textContent = gl.length + (gl.length === 1 ? ' input is still a guess: ' : ' inputs are still guesses: ') + names.join(', ');
+    }
+  }
+  function collabVis() { var p = cur(); renderGuesses(); renderHistory(p); }
+  function openField(k) {
+    var el = $('form').querySelector('[data-k="' + k + '"]'); if (!el) return;
+    var adv = el.closest('details.adv'), grp = el.closest('details.grp');
+    if (grp) grp.open = true;
+    if (adv) adv.open = true;
+    el.scrollIntoView({ block: 'center' });
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  }
+  $('form').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-guess]');
+    if (t) { e.preventDefault(); toggleGuess(t.getAttribute('data-guess')); return; }
+    if (e.target.closest('#guessLine')) openField($('guessLine').getAttribute('data-first'));
+  });
+  $('form').addEventListener('keydown', function (e) {
+    var t = e.target.closest && e.target.closest('[data-guess]');
+    if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggleGuess(t.getAttribute('data-guess')); }
+  });
   /* ===== main ===== */
-  var TABS = [['overview', 'Overview'], ['cost', 'Cost build-up'], ['pl', 'P&L per unit'], ['channels', 'Compare channels'], ['ship', 'Shipment']];
+  var TABS = [['overview', 'Overview'], ['cost', 'Cost build-up'], ['pl', 'P&L per unit'], ['channels', 'Compare channels'], ['whatif', 'What if'], ['ship', 'Shipment']];
 
   function renderKpis() {
     var p = cur(), c = CACHE[p.id], r = c.r, pl = c.pl, ok = pl.profit >= 0;
@@ -878,14 +1061,400 @@ window.FIREBASE_CONFIG = {
       '<div class="r" style="align-items:baseline"><span>Cash you need</span><b style="font-size:22px">' + usd(cash) + '</b></div>' +
       '<div class="r"><span>of which IVA, comes back as credit</span><b>' + usd(iva) + '</b></div>' +
       '<div class="r t" style="align-items:baseline"><span>Total net profit</span><b style="font-size:22px;color:' + (contrib >= 0 ? '#4BE3A0' : '#FDBA74') + '">' + clp(contrib) + '</b></div></div></div>' +
-      summary +
+      summary + mixCard() +
       '<div class="card tablewrap"><h3>How order size changes "' + esc(p.name) + '"</h3><table class="t"><thead><tr><th>Scenario</th><th>Container used</th><th>Freight / unit</th><th>Net cost / unit</th><th>Profit / unit</th></tr></thead><tbody>' + sbody + '</tbody></table>' +
       (unitCbm(p) > 0 ? '' : '<p class="note">Enter the carton size to see these scenarios.</p>') + '</div>';
   }
 
+  /* ===== what-if: price/ROAS grid and worst/expected/best scenarios (pure, no DOM) =====
+     Every function takes the product, all products (for the shared sea freight split) and the settings,
+     and works on deep copies: S is never changed here. */
+  var WI_ROAS = [0, 16, 12, 8, 6, 4]; /* 0 = no ads */
+  var WI_STEPS = [-0.2, -0.13, -0.07, 0, 0.1, 0.2, 0.3];
+  var WI_SCEN = { fx: '10', returns: '50', roas: '25' };
+
+  function wiClone(x) { return JSON.parse(JSON.stringify(x)); }
+  function wiMk(settings, id) {
+    for (var i = 0; i < settings.mk.length; i++) if (settings.mk[i].id === id) return settings.mk[i];
+    return settings.mk[0];
+  }
+  /* Same as recompute() for one product, with optional changes to a copy of the product and of fx. */
+  function wiEval(p, products, settings, edit) {
+    var q = wiClone(p), fx = settings.fx;
+    if (edit) fx = edit(q, fx) || fx;
+    var ps = products.map(function (x) { return x.id === p.id ? q : x; });
+    var lcl = settings.lcl || {};
+    var al = lclAlloc(ps, { on: true, rate: lcl.rate, min: lcl.min, agent: lcl.agent, split: lcl.split });
+    var r = calcSim(q.sim, al.map[q.id]);
+    var mk = wiMk(settings, q.pl.mk);
+    return { r: r, pl: calcPL(r, q.pl, mk, fx), q: q, fx: n(fx) };
+  }
+  /* "Nice" retail price: ending in 990 (or 90 / 9 for cheap items). */
+  function wiNice(x) {
+    var u = x >= 20000 ? 1000 : x >= 2000 ? 100 : 10;
+    return Math.max(u, Math.round(x / u) * u) - (u === 10 ? 1 : 10);
+  }
+  function wiPrices(rrp) {
+    var out = [];
+    WI_STEPS.forEach(function (s) {
+      var v = s === 0 ? rrp : wiNice(rrp * (1 + s));
+      if (v > 0 && out.indexOf(v) < 0) out.push(v);
+    });
+    return out.sort(function (a, b) { return a - b; });
+  }
+  function wiRoasList(roas) {
+    var out = WI_ROAS.slice();
+    if (out.indexOf(roas) < 0) out.push(roas);
+    /* no ads first, then highest ROAS (cheapest ads) to lowest */
+    return out.sort(function (a, b) { return (a === 0 ? -1 : b === 0 ? 1 : b - a); });
+  }
+  function wiBand(profit, margin, target) { return profit < 0 ? 'loss' : margin < target ? 'below' : 'ok'; }
+
+  /* Grid of profit per unit: rows = ROAS, cols = retail price. */
+  function wiGrid(p, products, settings) {
+    var rrp = n(p.pl.rrp), roas = n(p.pl.roas), target = n(p.pl.target) / 100;
+    if (rrp <= 0) return { empty: true, rrp: rrp, roas: roas, target: target, prices: [], roasList: [], rows: [] };
+    var prices = wiPrices(rrp), roasList = wiRoasList(roas);
+    var rows = roasList.map(function (ro) {
+      return { roas: ro, cells: prices.map(function (pr) {
+        var x = wiEval(p, products, settings, function (q) { q.pl.rrp = String(pr); q.pl.roas = String(ro); }).pl;
+        return { price: pr, roas: ro, profit: x.profit, margin: x.margin, band: wiBand(x.profit, x.margin, target), current: pr === rrp && ro === roas };
+      }) };
+    });
+    var g = { empty: false, rrp: rrp, roas: roas, target: target, prices: prices, roasList: roasList, rows: rows };
+    g.finding = wiFinding(g);
+    return g;
+  }
+  function wiFinding(g) {
+    var row = null, all = [];
+    g.rows.forEach(function (r) { if (r.roas === g.roas) row = r; all = all.concat(r.cells); });
+    var hit = row.cells.filter(function (c) { return c.band === 'ok'; })[0];
+    var pay = row.cells.filter(function (c) { return c.profit >= 0; })[0];
+    var best = all.reduce(function (a, c) { return c.profit > a.profit ? c : a; }, all[0]);
+    return { roas: g.roas, hit: hit || null, pay: pay || null, best: best, anyProfit: best.profit >= 0 };
+  }
+
+  /* Worst / expected / best. Ranges are relative percentages (strings) from settings.scen. */
+  function wiRanges(settings) { return Object.assign({}, WI_SCEN, (settings && settings.scen) || {}); }
+  function wiScenarios(p, products, settings) {
+    var rg = wiRanges(settings);
+    var f = n(rg.fx) / 100, rr = n(rg.returns) / 100, ra = n(rg.roas) / 100;
+    var cur = n(p.sim.duty);
+    function make(dir) {
+      return function (q, fx) {
+        if (dir === 0) return fx;
+        var s = q.sim;
+        if (dir < 0) {
+          /* general tariff, unless the current duty is already higher */
+          if (n(s.dutyGen) > cur) s.dutyMode = 'general';
+        } else if (n(s.dutyFF) < cur) s.dutyMode = 'formF';
+        syncDuty(s);
+        q.pl.returns = String(n(q.pl.returns) * (1 - dir * rr));
+        q.pl.roas = String(n(q.pl.roas) * (1 + dir * ra));
+        return String(n(fx) * (1 - dir * f));
+      };
+    }
+    var cols = [['worst', 'Worst', -1], ['expected', 'Expected', 0], ['best', 'Best', 1]].map(function (d) {
+      var e = wiEval(p, products, settings, make(d[2]));
+      return { id: d[0], label: d[1], fx: e.fx, duty: n(e.q.sim.duty), dutyMode: e.q.sim.dutyMode, returns: n(e.q.pl.returns), roas: n(e.q.pl.roas),
+        perUnitNet: e.r.perUnitNet, profit: e.pl.profit, margin: e.pl.margin, total: e.pl.profit * e.r.qty, qty: e.r.qty };
+    });
+    var ok = cols.map(function (c) { return c.profit >= 0; });
+    var summary = ok[0] && ok[1] && ok[2] ? 'Profitable in all three cases.'
+      : ok[1] && ok[2] ? 'Profitable as expected and in the best case, loses money in the worst case.'
+      : ok[2] ? 'Only profitable in the best case.'
+      : ok[0] || ok[1] ? 'Mixed result: check the ranges.'
+      : 'Loses money in all three cases.';
+    return { ranges: rg, cols: cols, summary: summary };
+  }
+  /* ===== view: What if (price/ROAS grid + scenarios). Computation in whatif.js ===== */
+  function wiShort(v) {
+    var a = Math.abs(Math.round(v)), s = Math.round(v) < 0 ? '-$' : '$';
+    if (a < 1000) return s + a;
+    if (a < 10000) return s + (Math.round(a / 100) / 10).toFixed(1).replace('.', ',') + 'k';
+    return s + grp(a / 1000) + 'k';
+  }
+  function wiRoasLabel(r) { return r > 0 ? 'ROAS ' + (Math.round(r * 10) / 10) : 'no ads'; }
+
+  function vWhatif(p) {
+    return wiGridCard(p) + wiScenCard(p);
+  }
+
+  function wiGridCard(p) {
+    var g = wiGrid(p, S.products, S.settings), tp = Math.round(g.target * 100) + '%';
+    var head = '<h3>Price and ad spend sweet spot</h3>';
+    if (g.empty) return '<div class="card">' + head + '<p class="note" style="margin:0">Enter a selling price to see the grid.</p></div>';
+    var f = g.finding, rl = wiRoasLabel(f.roas), line;
+    if (f.hit) line = 'At ' + rl + ', the lowest price in range that reaches your ' + tp + ' margin is <b>' + clp(f.hit.price) + '</b>.';
+    else if (f.pay) line = 'At ' + rl + ', no price in range reaches ' + tp + ' margin. The lowest price that makes money is <b>' + clp(f.pay.price) + '</b>.';
+    else if (f.anyProfit) line = 'At ' + rl + ', no price in range makes money. Best cell: <b>' + clp(f.best.price) + '</b> with ' + wiRoasLabel(f.best.roas) + ', ' + clp(f.best.profit) + ' per unit.';
+    else line = 'No price and ad spend in this range makes money. Best cell loses ' + clp(-f.best.profit) + ' per unit.';
+    var th = '<tr><th>ROAS</th>' + g.prices.map(function (pr) { return '<th class="num' + (pr === g.rrp ? ' wi-curh' : '') + '">' + clp(pr) + '</th>'; }).join('') + '</tr>';
+    var body = g.rows.map(function (r) {
+      return '<tr><th scope="row"' + (r.roas === g.roas ? ' class="wi-curh"' : '') + '>' + (r.roas > 0 ? (Math.round(r.roas * 10) / 10) : 'No ads') + '</th>' + r.cells.map(function (c) {
+        var t = clp(c.price) + ', ' + wiRoasLabel(c.roas) + ': ' + clp(c.profit) + ' per unit, ' + pct(c.margin) + ' margin' + (c.current ? ' (current)' : '');
+        return '<td class="wi-' + c.band + (c.current ? ' wi-cur' : '') + '"><button type="button" class="num" data-wi-cell="' + c.price + '|' + c.roas + '" title="' + esc(t) + '" aria-label="' + esc(t) + '">' + wiShort(c.profit) + (c.band === 'ok' ? ' ✓' : '') + '</button></td>';
+      }).join('') + '</tr>';
+    }).join('');
+    return '<div class="card">' + head + '<p style="margin:0 0 10px">' + line + '</p>' +
+      '<div class="tablewrap"><table class="wi-grid"><thead>' + th + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<div class="legend"><span><b class="wi-loss"></b>Loss (minus sign)</span><span><b class="wi-below"></b>Profit, below ' + tp + ' margin</span><span><b class="wi-ok"></b>✓ ' + tp + ' margin or more</span><span><b class="wi-curk"></b>Current price and ROAS</span></div>' +
+      '<p class="note" style="margin:8px 0 0">Profit per unit in CLP. Click a cell to use that price and ROAS. The grid assumes sales volume does not change with price or ad spend, which in practice it does.</p></div>';
+  }
+
+  function wiScenCard(p) {
+    var s = wiScenarios(p, S.products, S.settings), cols = s.cols, rg = s.ranges;
+    function row(label, fn, cls) {
+      return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td>' + cols.map(function (c) { return '<td class="num">' + fn(c) + '</td>'; }).join('') + '</tr>';
+    }
+    function money(v) { return '<span class="' + (v >= 0 ? 'pos' : 'neg') + '">' + clp(v) + '</span>'; }
+    var dutyL = function (c) { return (Math.round(c.duty * 10) / 10) + '%' + (c.dutyMode === 'formF' ? ' (Form F)' : c.dutyMode === 'general' ? ' (general)' : ''); };
+    var head = '<tr><th>Per unit</th>' + cols.map(function (c) { return '<th' + (c.id === 'expected' ? ' style="color:var(--text)"' : '') + '>' + c.label + '</th>'; }).join('') + '</tr>';
+    var body =
+      row('1 US$ in CLP', function (c) { return grp(c.fx); }) +
+      row('Import duty', dutyL) +
+      row('Returns', function (c) { return (Math.round(c.returns * 10) / 10) + '%'; }) +
+      row('Ads', function (c) { return wiRoasLabel(c.roas); }) +
+      row('Net cost per unit', function (c) { return usd(c.perUnitNet); }, 'wi-sep') +
+      row('Profit per unit', function (c) { return money(c.profit); }) +
+      row('Margin', function (c) { return pct(c.margin); }) +
+      row('Total result, ' + cols[1].qty + ' units', function (c) { return money(c.total); }, 'tot');
+    function inp(k, label) {
+      return '<label class="f"><span>' + label + '</span><input type="text" inputmode="decimal" data-wi-scen="' + k + '" value="' + esc(rg[k]) + '"></label>';
+    }
+    return '<div class="card"><h3>Scenarios</h3><p style="margin:0 0 10px"><b>' + s.summary + '</b></p>' +
+      '<div class="tablewrap"><table class="t wi-scen"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<details class="adv" style="margin-top:12px"><summary>Adjust ranges</summary>' +
+      '<p class="note" style="margin:0 0 8px">Worst and best move each input by these amounts. Duty: general tariff in the worst case, Form F in the best. Shared by both of you.</p>' +
+      '<div class="wi-fields">' + inp('fx', 'Exchange rate, +/- %') + inp('returns', 'Returns, relative +/- %') + inp('roas', 'ROAS, +/- %') + '</div></details></div>';
+  }
+
+  /* events for this view (delegated on #view, like events.js) */
+  $('view').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-wi-cell]');
+    if (!b) return;
+    var v = b.getAttribute('data-wi-cell').split('|'), pr = v[0], ro = v[1];
+    ask('Use price ' + clp(+pr) + ' and ' + (+ro > 0 ? 'ROAS ' + ro : 'no ads (ROAS 0)') + '?', 'Use', function () {
+      var p = cur(); p.pl.rrp = pr; p.pl.roas = ro; changed(false);
+    });
+  });
+  $('view').addEventListener('change', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-wi-scen');
+    if (!k) return;
+    S.settings.scen = Object.assign({}, WI_SCEN, S.settings.scen || {});
+    S.settings.scen[k] = String(e.target.value).trim();
+    changed(true);
+  });
+  /* ===== container mix optimizer (pure, no DOM) =====
+     optimizeMix(ctx) searches the units of the products in the shared sea shipment (sim.lcl === true)
+     for the highest total net profit, evaluating every candidate with the real lclAlloc + calcSim + calcPL.
+     ctx = { products, cfg (lclCfg()), fx, mk: function (id) -> marketplace, budget (US$ for goods, 0 = no limit) }
+     A product with blank sim.maxUnits is fixed at its current quantity. Others move in whole cartons
+     (units-per-carton steps) between 0 and their max. Coordinate ascent from several starts, then pair swaps;
+     the current mix is always a candidate, so the result is never worse than it (when it is feasible). */
+  function mixEval(ctx, qty) {
+    var ps = ctx.products.map(function (p) {
+      if (qty[p.id] === undefined) return p;
+      var q = Object.assign({}, p); q.sim = Object.assign({}, p.sim, { qty: String(qty[p.id]) }); return q;
+    });
+    var al = lclAlloc(ps, ctx.cfg), profit = 0, goods = 0;
+    ps.forEach(function (p) {
+      if (qty[p.id] === undefined) return;
+      var r = calcSim(p.sim, al.map[p.id]);
+      var pl = calcPL(r, p.pl, ctx.mk(p.pl.mk), ctx.fx);
+      profit += pl.profit * r.qty; goods += r.goods;
+    });
+    return { qty: qty, profit: profit, goods: goods, totalCbm: al.totalCbm, billed: al.billed };
+  }
+
+  function optimizeMix(ctx) {
+    var t0 = Date.now(), evals = 0, MAX_EVALS = ctx.maxEvals || 3000;
+    var budget = n(ctx.budget);
+    var MAX_MS = ctx.maxMs || 150;
+    function stop() { return evals >= MAX_EVALS || Date.now() - t0 > MAX_MS; }
+    var sel = ctx.products.filter(function (p) { return p.sim.lcl === true; });
+    var items = sel.map(function (p) {
+      var cur = Math.max(0, Math.round(n(p.sim.qty)));
+      var fixed = String(p.sim.maxUnits === undefined ? '' : p.sim.maxUnits).trim() === '';
+      var step = Math.max(1, Math.round(n(p.sim.upc)) || 1);
+      var maxC = fixed ? 0 : Math.floor(Math.round(n(p.sim.maxUnits)) / step);
+      return { id: p.id, name: p.name, fixed: fixed, current: cur, step: step, maxC: maxC, max: fixed ? cur : maxC * step, price: n(p.sim.price) };
+    });
+    var vars = items.filter(function (it) { return !it.fixed; });
+    var fixedGoods = 0;
+    items.forEach(function (it) { if (it.fixed) fixedGoods += it.current * it.price; });
+
+    function toQty(c) { var q = {}; items.forEach(function (it) { q[it.id] = it.fixed ? it.current : c[it.id] * it.step; }); return q; }
+    function goodsOf(c) { var g = fixedGoods; vars.forEach(function (it) { g += c[it.id] * it.step * it.price; }); return g; }
+    function okBudget(g) { return !budget || g <= budget + 1e-9; }
+    var memo = {};
+    function ev(c) {
+      var key = vars.map(function (it) { return c[it.id]; }).join(',');
+      if (memo[key]) return memo[key];
+      evals++;
+      return (memo[key] = mixEval(ctx, toQty(c)));
+    }
+    function better(a, b) { return !b || a.profit > b.profit + 1e-6 || (Math.abs(a.profit - b.profit) <= 1e-6 && a.goods < b.goods - 1e-9); }
+    /* shrink proportionally (then one carton at a time) until the goods fit the budget */
+    function repair(c) {
+      c = Object.assign({}, c);
+      if (!budget) return c;
+      var g = goodsOf(c), varG = g - fixedGoods;
+      if (okBudget(g)) return c;
+      var f = varG > 0 ? Math.max(0, (budget - fixedGoods) / varG) : 0;
+      vars.forEach(function (it) { c[it.id] = Math.floor(c[it.id] * f); });
+      while (!okBudget(goodsOf(c))) {
+        var big = null;
+        vars.forEach(function (it) { if (c[it.id] > 0 && (!big || c[it.id] * it.step * it.price > c[big.id] * big.step * big.price)) big = it; });
+        if (!big) break;
+        c[big.id]--;
+      }
+      return c;
+    }
+
+    var curQ = {}; items.forEach(function (it) { curQ[it.id] = it.current; });
+    var currentRes = mixEval(ctx, curQ);
+    var currentOver = !okBudget(currentRes.goods);
+    var currentOverMax = vars.some(function (it) { return it.current > it.max; });
+    var currentOk = !currentOver && !currentOverMax;
+    var fixedOverBudget = budget > 0 && fixedGoods > budget + 1e-9;
+
+    var best = null;
+    if (vars.length && !fixedOverBudget) {
+      var starts = [], cCur = {}, cMax = {}, cZero = {}, cHalf = {};
+      vars.forEach(function (it) {
+        cCur[it.id] = Math.min(it.maxC, Math.round(it.current / it.step));
+        cMax[it.id] = it.maxC; cZero[it.id] = 0; cHalf[it.id] = Math.floor(it.maxC / 2);
+      });
+      starts.push(repair(cCur), repair(cMax), cZero, repair(cHalf));
+      /* one product at its max, the others at zero (finds corner mixes when the budget binds) */
+      if (vars.length > 1) vars.forEach(function (it) { var c1 = Object.assign({}, cZero); c1[it.id] = it.maxC; starts.push(repair(c1)); });
+      starts.forEach(function (s0) {
+        if (stop()) return;
+        var c = Object.assign({}, s0), res = ev(c);
+        var top = 0; vars.forEach(function (it) { top = Math.max(top, it.maxC); });
+        var scale = Math.max(1, Math.ceil(top / 4));
+        while (scale >= 1 && !stop()) {
+          var moved = false;
+          vars.forEach(function (it) {
+            [scale, -scale].forEach(function (d) {
+              var v = c[it.id] + d;
+              if (v < 0 || v > it.maxC || stop()) return;
+              var t = Object.assign({}, c); t[it.id] = v;
+              if (!okBudget(goodsOf(t))) return;
+              var r = ev(t);
+              if (better(r, res)) { c = t; res = r; moved = true; }
+            });
+          });
+          /* pair swaps: one more carton step of i, one less of j (helps when the budget binds) */
+          if (!moved && vars.length > 1) {
+            vars.forEach(function (a) {
+              vars.forEach(function (b) {
+                if (a === b || stop()) return;
+                var t = Object.assign({}, c); t[a.id] += scale; t[b.id] -= scale;
+                if (t[a.id] > a.maxC || t[b.id] < 0) return;
+                while (!okBudget(goodsOf(t)) && t[b.id] > 0) t[b.id]--;
+                if (!okBudget(goodsOf(t))) return;
+                var r = ev(t);
+                if (better(r, res)) { c = t; res = r; moved = true; }
+              });
+            });
+          }
+          if (!moved) scale = scale > 1 ? Math.floor(scale / 2) : 0;
+        }
+        if (better(res, best)) best = res;
+      });
+    }
+    /* never return a mix worse than the current one */
+    var improved = !!best && (!currentOk || best.profit > currentRes.profit + 1e-6);
+    if (currentOk && (!best || !improved)) best = currentRes;
+    return {
+      items: items, current: currentRes, best: best, improved: improved && !!best,
+      currentOk: currentOk, currentOverBudget: currentOver, currentOverMax: currentOverMax,
+      fixedOverBudget: fixedOverBudget, noProfit: !!best && best.profit <= 0,
+      budget: budget, evals: evals, ms: Date.now() - t0
+    };
+  }
+  /* ===== "Best mix for this shipment" card (Shipment tab), uses optimizeMix() from optimizer.js ===== */
+  var mixMemo = { key: '', res: null };
+  function mixResult() {
+    var mix = S.settings.mix || { budget: '' };
+    var key = JSON.stringify([S.products.map(function (p) { return [p.id, p.name, p.sim, p.pl]; }), S.settings.lcl, S.settings.fx, mix, S.settings.mk]);
+    if (mixMemo.key !== key) {
+      mixMemo.key = key;
+      mixMemo.res = optimizeMix({ products: S.products, cfg: lclCfg(), fx: S.settings.fx, mk: mkById, budget: mix.budget });
+    }
+    return mixMemo.res;
+  }
+
+  function mixCard() {
+    var inShip = S.products.filter(function (x) { return x.sim.lcl === true; });
+    var head = '<h3>Best mix for this shipment</h3>';
+    if (!inShip.length) return '<div class="card">' + head + '<p class="note" style="margin:0">Tick products into the shipment above to use this.</p></div>';
+    var R = mixResult(), budget = (S.settings.mix || {}).budget || '';
+    var sug = R.best && R.improved ? R.best.qty : null;
+    var rows = R.items.map(function (it) {
+      var p = S.products.filter(function (x) { return x.id === it.id; })[0];
+      var i = S.products.indexOf(p);
+      var s = sug ? sug[it.id] : it.current, d = s - it.current;
+      return '<tr><td><span style="display:inline-flex;align-items:center;gap:8px"><span class="dotc" style="background:' + COLORS[i % COLORS.length] + '"></span>' + esc(it.name) + '</span></td>' +
+        '<td class="num">' + it.current + '</td>' +
+        '<td><input class="mixin num" type="text" inputmode="numeric" placeholder="Fixed" data-maxu="' + esc(it.id) + '" value="' + esc(p.sim.maxUnits || '') + '" aria-label="Max units you can sell: ' + esc(it.name) + '"></td>' +
+        '<td class="num"><b>' + (it.fixed ? it.current : s) + '</b>' + (it.step > 1 && !it.fixed ? ' <span class="mut" style="font-size:12px">' + Math.round(s / it.step) + ' ctn</span>' : '') + '</td>' +
+        '<td class="num ' + (d > 0 ? 'pos' : d < 0 ? 'neg' : 'mut') + '">' + (it.fixed ? 'fixed' : d > 0 ? '+' + d : d < 0 ? String(d) : 'same') + '</td></tr>';
+    }).join('');
+    var C = R.current, B = R.best;
+    function col(x, isNow) {
+      if (!x) return ['-', '-', '-'];
+      return [usd(x.goods) + (isNow && R.currentOverBudget ? ' <span class="neg" style="font-size:12px">over budget</span>' : ''),
+        m3(x.totalCbm) + ' of ' + m3(x.billed),
+        '<span class="' + (x.profit >= 0 ? 'pos' : 'neg') + '">' + clp(x.profit) + '</span>'];
+    }
+    var cn = col(C, true), cs = col(sug ? B : null, false);
+    var cmp = '<table class="t" style="margin-top:12px"><thead><tr><th></th><th>Now</th><th>Suggested</th></tr></thead><tbody>' +
+      '<tr><td>Goods cost</td><td class="num">' + cn[0] + '</td><td class="num">' + cs[0] + '</td></tr>' +
+      '<tr><td>Space used / billed</td><td class="num">' + cn[1] + '</td><td class="num">' + cs[1] + '</td></tr>' +
+      '<tr class="tot"><td>Total net profit</td><td class="num">' + cn[2] + '</td><td class="num">' + cs[2] + '</td></tr></tbody></table>';
+    var msg;
+    var anyVar = R.items.some(function (it) { return !it.fixed; });
+    if (!anyVar) msg = 'Enter a max for at least one product to let the optimizer change its quantity.';
+    else if (R.fixedOverBudget) msg = 'The fixed products alone cost more than the budget. Raise the budget or enter a max for them.';
+    else if (R.noProfit && !sug) msg = 'No mix is profitable with these numbers, and nothing beats your current quantities.';
+    else if (R.noProfit) msg = 'No mix is profitable with these numbers. The suggestion below only loses less than now.';
+    else if (!sug) msg = 'Your current quantities are already the best mix found.';
+    else msg = 'This mix adds ' + clp(B.profit - C.profit) + ' of net profit' + (R.currentOk ? '' : ' and fits your limits') + '.';
+    if (anyVar && !R.currentOk && !R.fixedOverBudget) msg += ' Your current quantities are ' + (R.currentOverBudget ? 'over the budget' : 'above a max') + '.';
+    return '<div class="card mix">' + head +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px"><label class="f" style="flex:0 1 240px"><span>Budget for goods (US$)</span><input type="text" inputmode="decimal" placeholder="No limit" data-mixbudget value="' + esc(budget) + '"></label>' +
+      '<p class="note" style="margin:0;flex:1 1 260px">Set the most units you can sell for each product. A blank max keeps that product at its current quantity. Quantities move in whole cartons.</p></div>' +
+      '<div class="tablewrap"><table class="t"><thead><tr><th>Product</th><th>Now</th><th>Max you can sell</th><th>Suggested</th><th>Change</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + cmp +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:12px"><p class="note" style="margin:0;flex:1 1 260px">' + msg + ' Profit uses the real freight split for each mix.</p>' +
+      (sug ? '<button type="button" class="btn pri" data-mixapply>Apply these quantities</button>' : '') + '</div></div>';
+  }
+
+  $('view').addEventListener('change', function (e) {
+    var el = e.target;
+    if (!el.getAttribute) return;
+    if (el.hasAttribute('data-mixbudget')) {
+      if (!S.settings.mix) S.settings.mix = { budget: '' };
+      S.settings.mix.budget = el.value.trim(); changed(true); return;
+    }
+    var id = el.getAttribute('data-maxu');
+    if (id) { S.products.forEach(function (x) { if (x.id === id) x.sim.maxUnits = el.value.trim(); }); changed(true); }
+  });
+  $('view').addEventListener('click', function (e) {
+    if (!e.target.closest('[data-mixapply]')) return;
+    var R = mixResult();
+    if (!R.best || !R.improved) return;
+    var q = R.best.qty;
+    ask('Set the quantities of the products in this shipment to the suggested mix?', 'Apply', function () {
+      S.products.forEach(function (x) { if (q[x.id] !== undefined) x.sim.qty = String(q[x.id]); });
+      changed(false); toast('Quantities updated');
+    });
+  });
   function renderView() {
     var p = cur(), c = CACHE[p.id];
-    var f = { overview: vOverview, cost: vCost, pl: vPL, channels: vChannels, ship: vShip }[S.tab] || vOverview;
+    var f = { overview: vOverview, cost: vCost, pl: vPL, channels: vChannels, whatif: vWhatif, ship: vShip }[S.tab] || vOverview;
     var html = f(p, c);
     $('view').innerHTML = '<div style="display:flex;flex-direction:column;gap:16px">' + html + '</div>';
   }
@@ -924,7 +1493,7 @@ window.FIREBASE_CONFIG = {
   $('view').addEventListener('change', function (e) {
     var id = e.target.getAttribute && e.target.getAttribute('data-ship');
     if (!id) return;
-    S.products.forEach(function (x) { if (x.id === id) x.sim.lcl = e.target.checked; });
+    S.products.forEach(function (x) { if (x.id === id) { logChange(x, 's.lcl', x.sim.lcl === true, e.target.checked); x.sim.lcl = e.target.checked; } });
     changed(false);
   });
   $('view').addEventListener('click', function (e) {
@@ -942,7 +1511,7 @@ window.FIREBASE_CONFIG = {
   }
   $('btnAdd').addEventListener('click', addProduct);
   $('btnDup').addEventListener('click', function () {
-    var p = JSON.parse(JSON.stringify(cur())); p.id = 'p_' + uid(); p.name += ' (copy)';
+    var p = JSON.parse(JSON.stringify(cur())); p.id = 'p_' + uid(); p.name += ' (copy)'; delete p.history; delete p.fromIdea;
     S.products.push(p); S.active = p.id; changed(false);
   });
   $('btnDel').addEventListener('click', function () {
@@ -1035,7 +1604,7 @@ window.FIREBASE_CONFIG = {
       '<div class="c"><span class="dot' + (String(i.listings || '').trim() ? ' ok' : '') + '" data-dot="listings"></span><label class="f"><span>3. Listings found (saturation)</span><input type="text" inputmode="numeric" data-i="' + esc(i.id) + '" data-f="listings" value="' + esc(i.listings || '') + '" placeholder="e.g. 120"></label></div></div>' +
       '<label class="f"><span>Notes, source of the price, competitors</span><textarea data-i="' + esc(i.id) + '" data-f="notes">' + esc(i.notes || '') + '</textarea></label>' +
       '<div class="note">' + searchLinks(i) + '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn pri" data-act="tosim" data-id="' + esc(i.id) + '">Simulate it</button><button type="button" class="btn danger" data-act="del" data-id="' + esc(i.id) + '">Delete</button></div></article>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn pri" data-act="tosim" data-id="' + esc(i.id) + '">' + (ideaProduct(i) ? 'Open product' : 'Create product in simulator') + '</button><button type="button" class="btn danger" data-act="del" data-id="' + esc(i.id) + '">Delete</button></div></article>';
   }
   function renderIdeas() {
     var el = $('appIdeas'), list = S.ideas.filter(function (i) {
@@ -1068,6 +1637,13 @@ window.FIREBASE_CONFIG = {
     var b = e.target.closest('[data-view]'); if (!b) return;
     S.view = b.getAttribute('data-view'); save(); showView(true);
   });
+  function ideaProfileKey() { return mode === 'shared' ? profile : 'local'; }
+  /* The product made from this idea in the profile that is open, or null. */
+  function ideaProduct(i) {
+    if (!i.productId || i.productProfile !== ideaProfileKey()) return null;
+    for (var k = 0; k < S.products.length; k++) if (S.products[k].id === i.productId) return S.products[k];
+    return null;
+  }
   function ideaById(id) { for (var i = 0; i < S.ideas.length; i++) if (S.ideas[i].id === id) return S.ideas[i]; return null; }
   $('appIdeas').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act]'); if (!b) return;
@@ -1088,12 +1664,16 @@ window.FIREBASE_CONFIG = {
       return;
     }
     if (act === 'tosim') {
+      var ex = ideaProduct(i);
+      if (ex) { S.active = ex.id; S.tab = 'overview'; S.view = 'sim'; changed(false); window.scrollTo(0, 0); return; }
       var p = blankProduct(i.name); p.sim.lcl = true; p.sim.qty = '50';
-      var pr = String(i.price || '').replace(/\D/g, ''); if (pr) p.pl.rrp = pr;
-      p.notes = (safeUrl(i.link) ? i.link + '\n' : '') + (i.notes || '') + '\nIdea by ' + i.author + '. Listings found: ' + (i.listings || 'not checked') + '.';
+      p.notes = i.notes || '';
+      if (safeUrl(i.link)) p.links = [{ url: safeUrl(i.link) }];
+      var pr = String(i.price || '').replace(/[\s$.,]/g, ''); if (/^\d+$/.test(pr) && +pr > 0) p.pl.rrp = String(+pr);
+      p.fromIdea = i.id;
       S.products.push(p); S.active = p.id; S.tab = 'overview'; S.view = 'sim';
-      if (i.status === 'idea') i.status = 'investigating';
-      changed(false); window.scrollTo(0, 0);
+      i.status = 'test'; i.productId = p.id; i.productProfile = ideaProfileKey(); i.editedBy = S.me; i.updated = Date.now();
+      changed(false); window.scrollTo(0, 0); toast('Product created from the idea');
     }
   });
   function ideaInput(e) {
@@ -1168,7 +1748,7 @@ window.FIREBASE_CONFIG = {
   var PROFILES = { andre: 'André', agustin: 'Agustín' };
   var ALLOWED = { 'antunes.de.diogo@gmail.com': 'andre', 'agustin.oelckers@gmail.com': 'agustin' };
   var fbUser = null, fbDb = null, profile = null, who = null, itemsCol = null, ideasCol = null, unsubItems = null, unsubIdeas = null;
-  var syncTimer = null, lastItems = {}, lastIdeas = {}, lastSettings = '', loadedItems = false, seeded = false;
+  var syncTimer = null, lastItems = {}, lastIdeas = {}, lastSettings = '', loadedItems = false, seeded = false, placeholder = null;
 
   function canon(o) {
     if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
@@ -1228,7 +1808,7 @@ window.FIREBASE_CONFIG = {
     ids = Object.keys(remote);
     if (!ids.length) {
       if (!snap.metadata.fromCache && !seeded) {
-        seeded = true; loadedItems = true; lastItems = {}; lastSettings = '';
+        seeded = true; loadedItems = true; lastItems = {}; lastSettings = ''; placeholder = null;
         S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed';
         syncUp(); formBuilt = false; refresh(false);
       }
@@ -1242,7 +1822,9 @@ window.FIREBASE_CONFIG = {
       if (!loc && lastItems[id] !== undefined) return; /* deleted here, delete still on its way */
       var np = normProduct(remote[id]); next.push(np); lastItems[id] = canonP(np);
     });
-    S.products.forEach(function (loc) { if (!remote[loc.id] && lastItems[loc.id] === undefined) next.push(loc); });
+    /* local products not on the server yet are kept, except the placeholder shown while the profile loads */
+    S.products.forEach(function (loc) { if (loc !== placeholder && !remote[loc.id] && lastItems[loc.id] === undefined) next.push(loc); });
+    placeholder = null;
     Object.keys(lastItems).forEach(function (id) { if (!remote[id]) delete lastItems[id]; });
     next.sort(function (a, b) { return (a.created || 0) - (b.created || 0); });
     S.products = next.length ? next : [seedProduct()];
@@ -1303,7 +1885,7 @@ window.FIREBASE_CONFIG = {
     try { localStorage.setItem('importsim.profile', pid); } catch (e) {}
     itemsCol = fbDb.collection('workspaces/andre-agustin/profiles/' + pid + '/items');
     mode = 'shared'; loadedItems = false; seeded = false; lastItems = {}; lastSettings = '';
-    S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed'; S.me = who;
+    S.products = [seedProduct()]; S.settings = normSettings(); S.active = 'p_seed'; S.me = who; placeholder = S.products[0];
     if (firstOpen) { S.ideas = []; lastIdeas = {}; ideasCol = fbDb.collection('workspaces/andre-agustin/ideas'); }
     setStatus('wait');
     var col = itemsCol;

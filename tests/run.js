@@ -176,8 +176,8 @@ async function shared(browser, base, errs) {
 async function preexisting(browser, base, errs) {
   console.log('Pre-existing data (shared mode)');
   const api = loadCalc();
-  /* Stored products include p_seed, as in the live store. (A store without p_seed gets the placeholder seed
-     product added and written on first open: existing behaviour, not covered here.) */
+  /* Stored products include p_seed, as in the live store. A store without p_seed is covered in tests/collab.js
+     (the placeholder seed shown while loading is dropped, nothing is written). */
   const prod = api.seedProduct(); prod.name = 'Stored pump'; prod.sim.qty = '64';
   const doc = JSON.parse(JSON.stringify(Object.assign(api.normProduct(prod), { updatedBy: 'Agustín', updatedAt: 1762900000000 })));
   const prod2 = api.seedProduct(); prod2.id = 'p_stored2'; prod2.name = 'Second product'; prod2.created = 5; prod2.sim.qty = '12';
@@ -225,6 +225,7 @@ async function preexisting(browser, base, errs) {
     await shared(browser, base, errs);
     await preexisting(browser, base, errs);
     await require('./whatif.js').browser(browser, base, errs, check, newPage);
+    await require('./collab.js')({ browser, base, errs, check, newPage, openGroup, wait, loadCalc, ITEMS, IDEAS });
   } catch (e) { check('runner exception', false, String(e && e.stack || e)); }
   console.log('Page errors');
   check('no uncaught page errors', errs.length === 0, errs);
