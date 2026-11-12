@@ -1,5 +1,5 @@
   /* ===== main ===== */
-  var TABS = [['overview', 'Overview'], ['cost', 'Cost build-up'], ['pl', 'P&L per unit'], ['channels', 'Compare channels'], ['ship', 'Shipment']];
+  var TABS = [['overview', 'Overview'], ['cost', 'Cost build-up'], ['pl', 'P&L per unit'], ['channels', 'Compare channels'], ['whatif', 'What if'], ['ship', 'Shipment']];
 
   function renderKpis() {
     var p = cur(), c = CACHE[p.id], r = c.r, pl = c.pl, ok = pl.profit >= 0;

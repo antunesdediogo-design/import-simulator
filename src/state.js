@@ -29,7 +29,7 @@
   }
   function baseline() {
     return { products: [seedProduct()], active: 'p_seed', tab: 'overview', view: 'sim', me: 'André', ideas: [],
-      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk() } };
+      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk(), scen: { fx: '10', returns: '50', roas: '25' } } };
   }
   function syncDuty(sim) { sim.duty = sim.dutyMode === 'general' ? sim.dutyGen : sim.dutyMode === 'custom' ? sim.dutyCustom : sim.dutyFF; }
   function normProduct(p) {
@@ -51,7 +51,8 @@
       fx: st.fx !== undefined && st.fx !== '' ? st.fx : '1000',
       lcl: Object.assign({ rate: '350', min: '1', agent: '0', split: 'space' }, st.lcl || {}),
       sat: Object.assign({ low: '50', high: '300' }, st.sat || {}),
-      mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk()
+      mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk(),
+      scen: Object.assign({ fx: '10', returns: '50', roas: '25' }, st.scen || {})
     };
   }
   function normIdea(i) {

@@ -28,6 +28,8 @@ JS_FILES = [
     'view-pl.js',
     'view-channels.js',
     'view-ship.js',
+    'whatif.js',         # what-if grid and scenarios (pure)
+    'view-whatif.js',
     'render.js',         # renderView(), refresh(), changed()
     'events.js',         # form/list/tab/view events, product buttons, export/import
     'ui.js',             # menu, modal buttons, Escape key, theme

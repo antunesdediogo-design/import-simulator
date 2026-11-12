@@ -195,6 +195,7 @@ async function preexisting(browser, base, errs) {
   check('local build has no Firebase config', loc.indexOf('FIREBASE_CONFIG =') < 0 && loc.indexOf('firebasejs') < 0);
 
   goldenNode();
+  require('./whatif.js').node(check);
   const srv = await serve(), base = 'http://127.0.0.1:' + srv.address().port;
   const browser = await chromium.launch();
   const errs = [];
@@ -202,6 +203,7 @@ async function preexisting(browser, base, errs) {
     await localBuild(browser, base, errs);
     await shared(browser, base, errs);
     await preexisting(browser, base, errs);
+    await require('./whatif.js').browser(browser, base, errs, check, newPage);
   } catch (e) { check('runner exception', false, String(e && e.stack || e)); }
   console.log('Page errors');
   check('no uncaught page errors', errs.length === 0, errs);
