@@ -1,0 +1,58 @@
+<div class="top">
+  <h1>Import Simulator</h1>
+  <span class="badge" id="status" data-s="local" role="status">Saved in this browser</span>
+  <div class="seg" id="viewSw" role="radiogroup" aria-label="Section" style="min-width:250px">
+    <button type="button" role="radio" data-view="sim">Simulator</button>
+    <button type="button" role="radio" data-view="ideas">Ideas <span id="ideaCount" class="mut"></span></button>
+  </div>
+  <div class="sp">
+    <span class="note" id="hdrUser" style="align-self:center;margin:0" hidden></span>
+    <button class="btn" id="btnOut" type="button" hidden>Sign out</button>
+    <button class="btn" id="btnMenu" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu">Menu ⋯</button>
+    <div class="menu" id="menu" hidden>
+      <button class="btn pri" id="btnAuth" type="button" hidden>Sign in with Google</button>
+      <button class="btn" id="btnTheme" type="button">Light / dark</button>
+      <button class="btn" id="btnExport" type="button">Export data</button>
+      <button class="btn" id="btnImport" type="button">Import data</button>
+      <button class="btn danger" id="btnReset" type="button">Reset to baseline</button>
+    </div>
+    <input type="file" id="fileIn" accept="application/json" hidden>
+  </div>
+</div>
+
+<div class="app" id="appSim">
+  <aside aria-label="Products and inputs">
+    <h2 class="redlabel">Fill in the product info</h2>
+    <div id="who" hidden>
+      <h2 class="sec">Numbers of</h2>
+      <div class="seg" role="radiogroup" aria-label="Whose numbers" style="margin-top:8px"><button type="button" role="radio" data-prof="andre">André</button><button type="button" role="radio" data-prof="agustin">Agustín</button></div>
+      <p class="note" id="authInfo" style="margin:8px 0 0"></p>
+      <button class="btn pri" id="btnSignIn" type="button" style="margin-top:8px;width:100%" hidden>Sign in with Google to share</button>
+    </div>
+    <div>
+      <h2 class="sec">Products</h2>
+      <div class="plist" id="plist" style="margin-top:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn pri" id="btnAdd" type="button">+ Add product</button>
+        <button class="btn" id="btnDup" type="button">Duplicate</button>
+        <button class="btn danger" id="btnDel" type="button">Delete</button>
+      </div>
+    </div>
+    <div id="form"></div>
+  </aside>
+
+  <main>
+    <h2 class="redlabel">Summarized information</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalText"><div class="box"><p id="modalText"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" id="modalNo">Cancel</button><button type="button" class="btn pri" id="modalYes">OK</button></div></div></div>
+<div id="toast" hidden role="status"></div>
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle"><div class="box"><h1 id="gateTitle">Import Simulator</h1><p id="gateMsg">Checking sign-in...</p><button class="btn pri" id="gateIn" type="button" hidden>Sign in with Google</button><button class="btn" id="gateOut" type="button" hidden>Sign out and use another account</button></div></div>
+<div id="lightbox" hidden><img alt="Reference photo, enlarged"></div>
+
+<section class="ideas" id="appIdeas" hidden aria-label="Ideas to investigate"></section>
+

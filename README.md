@@ -23,6 +23,15 @@ A one-page tool to check whether a product imported from China to Chile is worth
 
 The Firebase web config in `index.html` is not a secret. Access is controlled by Google sign-in and the rules in `firestore.rules`, which must be published in the Firebase console (Firestore Database > Rules).
 
+## Development
+
+The page is built from the files in `src/` (see `ARCHITECTURE.md` for what is where).
+
+1. Edit the files in `src/`, not `index.html`.
+2. Run `python3 build.py` to rebuild `index.html` (`python3 build.py --local` writes `dist/local.html` without Firebase, for offline testing).
+3. Run `node tests/run.js` (Node and Playwright with Chromium). It must end with 0 failed.
+4. Commit both `src/` and the rebuilt `index.html`; GitHub Pages serves `index.html` from `main`.
+
 ## Sources and limits
 
 Marketplace commissions and Mercado Libre shipping and Full rates were read from each marketplace's seller pages in November 2026 and can change. The Sodimac commission is a placeholder. Exchange rate, freight, agent cost, RRP, ROAS and returns are example values to replace with your own quotes.
