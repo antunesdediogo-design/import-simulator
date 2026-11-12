@@ -1,5 +1,5 @@
   /* ===== state ===== */
-  var DEFAULT_SIM = { qty: '100', price: '0', kgu: '0.2', rate: '10', origin: '0', insp: '1', duty: '0', agent: '150', dep: '30', cl: '0', cw: '0', ch: '0', upc: '100', vdiv: '6000', lcl: false, dutyMode: 'formF', dutyFF: '0', dutyGen: '6', dutyCustom: '', hs: '' };
+  var DEFAULT_SIM = { qty: '100', price: '0', kgu: '0.2', rate: '10', origin: '0', insp: '1', duty: '0', agent: '150', dep: '30', cl: '0', cw: '0', ch: '0', upc: '100', vdiv: '6000', lcl: false, dutyMode: 'formF', dutyFF: '0', dutyGen: '6', dutyCustom: '', hs: '', maxUnits: '' };
   var DEFAULT_PL = { rrp: '0', mk: 'ml', roas: '4', returns: '3', target: '20', days: '1', full: false, fullSize: 'S', fullIn: '0' };
 
   function defaultMk() {
@@ -29,7 +29,7 @@
   }
   function baseline() {
     return { products: [seedProduct()], active: 'p_seed', tab: 'overview', view: 'sim', me: 'André', ideas: [],
-      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk() } };
+      settings: { fx: '1000', lcl: { rate: '350', min: '1', agent: '0', split: 'space' }, sat: { low: '50', high: '300' }, mk: defaultMk(), mix: { budget: '' } } };
   }
   function syncDuty(sim) { sim.duty = sim.dutyMode === 'general' ? sim.dutyGen : sim.dutyMode === 'custom' ? sim.dutyCustom : sim.dutyFF; }
   function normProduct(p) {
@@ -51,7 +51,8 @@
       fx: st.fx !== undefined && st.fx !== '' ? st.fx : '1000',
       lcl: Object.assign({ rate: '350', min: '1', agent: '0', split: 'space' }, st.lcl || {}),
       sat: Object.assign({ low: '50', high: '300' }, st.sat || {}),
-      mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk()
+      mk: Array.isArray(st.mk) && st.mk.length ? st.mk : defaultMk(),
+      mix: Object.assign({ budget: '' }, st.mix || {})
     };
   }
   function normIdea(i) {

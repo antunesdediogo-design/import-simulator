@@ -182,3 +182,6 @@ details.adv[open]>summary::before{content:"- "}
   .kpi .v{font-size:19px}
   .verdict .big{font-size:34px}
 }
+.mixin{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-height:36px;width:110px;text-align:right;font-size:14px}
+.mix table.t td{vertical-align:middle}
+@media (max-width:520px){.mixin{width:76px}.mix table.t td,.mix table.t th{padding:8px 6px}}

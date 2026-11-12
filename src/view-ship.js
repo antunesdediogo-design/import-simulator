@@ -54,7 +54,7 @@
       '<div class="r" style="align-items:baseline"><span>Cash you need</span><b style="font-size:22px">' + usd(cash) + '</b></div>' +
       '<div class="r"><span>of which IVA, comes back as credit</span><b>' + usd(iva) + '</b></div>' +
       '<div class="r t" style="align-items:baseline"><span>Total net profit</span><b style="font-size:22px;color:' + (contrib >= 0 ? '#4BE3A0' : '#FDBA74') + '">' + clp(contrib) + '</b></div></div></div>' +
-      summary +
+      summary + mixCard() +
       '<div class="card tablewrap"><h3>How order size changes "' + esc(p.name) + '"</h3><table class="t"><thead><tr><th>Scenario</th><th>Container used</th><th>Freight / unit</th><th>Net cost / unit</th><th>Profit / unit</th></tr></thead><tbody>' + sbody + '</tbody></table>' +
       (unitCbm(p) > 0 ? '' : '<p class="note">Enter the carton size to see these scenarios.</p>') + '</div>';
   }
